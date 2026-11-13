@@ -1,1 +1,1 @@
-{"stage": "tk_volumes", "r2_key": "ant-twin/data/toulkeridou2023/training.zip", "local_zip": "/root/data/tk_training.zip", "dataset_id": 501, "n_folds": 5, "seed": 20261113}
+{"stage": "nnunet_tk", "dataset_run": "20261113-180256_toulkeridou-2023-labels-native-grid-3d-volumes-n_6945dce09bf2", "dataset_id": 501, "configuration": "2d", "fold": 0, "trainer": "nnUNetTrainer_100epochs", "boxes_run": "20261113-162908_brain-boxes-v2-150-training-specimens-from-all-f_6945dce09bf2", "target_um": 2.44, "max_predict": 999, "workdir": "/root/nnunet", "np": 8, "n_proc_da": 8}
