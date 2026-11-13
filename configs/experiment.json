@@ -1,1 +1,1 @@
-{"stage": "brain_boxes", "n_specimens": 40, "seed": 20261113, "lowres_zstep": 2, "pad_frac": 0.5, "max_box_um": 2500, "workers": 3}
+{"stage": "nni_drafts", "source_run": "20261113-142934_brain-labels-v1-training-set-and-full-res-brain_DESKTOP-7Q7S0N3", "downsample": 2, "max_specimens": 21}

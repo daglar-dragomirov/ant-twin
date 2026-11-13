@@ -4,3 +4,6 @@ pillow
 tifffile
 imagecodecs
 scipy
+pandas
+openpyxl
+nninteractive
