@@ -8,6 +8,30 @@ import os, io, json, time, pathlib
 import numpy as np
 from PIL import Image
 import r2
+from scipy import ndimage as ndi
+
+
+def candidate_clicks(vol, k=5):
+    """Centroids of smooth mid-grey components (brain neuropil is smooth soft tissue), nearest the box centre first."""
+    v = ndi.gaussian_filter(vol.astype(np.float32), 1.0)
+    mu = ndi.uniform_filter(v, 5); sd = np.sqrt(np.maximum(ndi.uniform_filter(v * v, 5) - mu * mu, 0))
+    body = mu > np.percentile(mu, 35)
+    lo, hi = np.percentile(mu[body], [20, 80])
+    smooth = body & (sd < np.percentile(sd[body], 30)) & (mu > lo) & (mu < hi)
+    smooth = ndi.binary_opening(smooth, iterations=2)
+    lab, n = ndi.label(smooth)
+    if n == 0:
+        return [tuple(int(x // 2) for x in vol.shape)]
+    sizes = ndi.sum(smooth, lab, range(1, n + 1)); ctr = np.array(vol.shape) / 2
+    cands = []
+    for i in np.argsort(sizes)[::-1][:20]:
+        if sizes[i] < 0.002 * vol.size: break
+        com = np.array(ndi.center_of_mass(smooth, lab, i + 1))
+        pts = np.argwhere(lab == i + 1); p = pts[np.argmin(((pts - com) ** 2).sum(1))]  # a voxel inside the component
+        cands.append((float(np.linalg.norm((p - ctr) / ctr)), tuple(int(x) for x in p)))
+    cands.sort()
+    out = [tuple(int(x // 2) for x in vol.shape)] + [c for _, c in cands]
+    return out[:k]
 
 
 def overlay(vol, m, path):
@@ -43,13 +67,21 @@ def main(cfg, out):
             box = np.load(io.BytesIO(c.get_object(Bucket=r2.BUCKET, Key=pre + f"boxes/{v}.npy")["Body"].read()))
             vol = box[::ds, ::ds, ::ds] if ds > 1 else box
             s.set_image(vol[None].astype(np.uint8))
-            tgt = torch.zeros(vol.shape, dtype=torch.uint8); s.set_target_buffer(tgt)
-            ctr = tuple(int(x // 2) for x in vol.shape)
-            s.add_point_interaction(ctr, include_interaction=True)
-            mk = tgt.numpy().astype(np.uint8).copy()
+            best = None; tried = []
+            for ctr in candidate_clicks(vol, cfg.get("n_clicks", 5)):
+                s.reset_interactions(); s.set_image(vol[None].astype(np.uint8))
+                tgt = torch.zeros(vol.shape, dtype=torch.uint8); s.set_target_buffer(tgt)
+                s.add_point_interaction(ctr, include_interaction=True)
+                cm = tgt.numpy().astype(np.uint8).copy(); frac = cm.sum() / cm.size
+                edge = int(cm[0].sum() + cm[-1].sum() + cm[:, 0].sum() + cm[:, -1].sum() + cm[:, :, 0].sum() + cm[:, :, -1].sum())
+                ok_ = 0.01 <= frac <= 0.35
+                score = (ok_, -edge / max(cm.sum(), 1), cm.sum())
+                tried.append({"click": ctr, "vox": int(cm.sum()), "frac": round(float(frac), 4), "edge_vox": edge, "plausible": ok_})
+                if best is None or score > best[0]: best = (score, ctr, cm)
+            _, ctr, mk = best
             np.save(out / "masks" / f"{v}.npy", mk); overlay(vol, mk, out / "qc" / f"{v}.png")
             touches = bool(mk[0].any() or mk[-1].any() or mk[:, 0].any() or mk[:, -1].any() or mk[:, :, 0].any() or mk[:, :, -1].any())
             rec = {"vial": v, "species": m["species"], "box_shape": list(box.shape), "downsample": ds, "click": ctr,
-                   "mask_vox": int(mk.sum()), "mask_vox_fullres_est": int(mk.sum()) * ds ** 3, "touches_box_edge": touches, "sec": round(time.time() - t0, 1)}
+                   "mask_vox": int(mk.sum()), "candidates": tried, "mask_vox_fullres_est": int(mk.sum()) * ds ** 3, "touches_box_edge": touches, "sec": round(time.time() - t0, 1)}
             f.write(json.dumps(rec, ensure_ascii=False) + "\n"); f.flush(); print(json.dumps(rec, ensure_ascii=False))
             s.reset_interactions()
