@@ -13,7 +13,38 @@ import numpy as np
 from scipy import ndimage as ndi
 import r2
 import bigtiff_range as BT
-from stages.brain_boxes import lowres_stack
+import time, urllib.request
+from PIL import Image
+
+UA = {"User-Agent": "dsc-biology-research/0.1 (academic, non-commercial)"}
+
+
+def http_ok(url):
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={**UA, "Range": "bytes=0-0"}), timeout=40) as r: return r.status in (200, 206)
+    except Exception:
+        return False
+
+
+def lowres_stack(base):
+    """Whole low-res PNG stack from a 'slice_%04d.png' URL template; returns (array z,y,x uint8, n_slices) or (None, 0)."""
+    if not http_ok(base % 0): return None, 0
+    lo, hi = 0, 256
+    while hi < 20000 and http_ok(base % hi): lo, hi = hi, hi * 2
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        lo, hi = (mid, hi) if http_ok(base % mid) else (lo, mid)
+    n = lo + 1
+    def get_(i):
+        for k in range(5):
+            try:
+                with urllib.request.urlopen(urllib.request.Request(base % i, headers=UA), timeout=60) as r:
+                    return i, np.asarray(Image.open(io.BytesIO(r.read())).convert("L"))
+            except Exception: time.sleep(1 + k)
+        return i, None
+    with cf.ThreadPoolExecutor(8) as ex: sl = dict(ex.map(get_, range(n)))
+    if any(a is None for a in sl.values()): return None, n
+    return np.stack([sl[i] for i in range(n)]), n
 from stages.tk_volumes import qc
 
 
@@ -46,7 +77,7 @@ def main(cfg, out):
         else:
             mk = np.load(io.BytesIO(get(rp + f"masks_B/{key}.npy")))
         info = BT.layout(m["url"]); H, W, P = info["H"], info["W"], m["n_pages"]
-        v, nlow = lowres_stack(m["vial"], 1, e["lowres_base"])
+        v, nlow = lowres_stack(e["lowres_base"])
         if v is None: return {"key": key, "status": "no_lowres"}
         fz, fy, fx = P / nlow, H / v.shape[1], W / v.shape[2]
         z0, z1, y0, y1, x0, x1 = m["box_zyx"]
