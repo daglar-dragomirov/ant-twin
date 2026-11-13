@@ -25,37 +25,43 @@ def get(url, start, end):
             time.sleep(1 + 2 * k)
 
 
-def parse_ifd(url, off):
-    head = get(url, off, off + 8 - 1)
-    n = struct.unpack("<Q", head)[0]
-    body = get(url, off + 8, off + 8 + n * 20 + 8 - 1)
+def parse_ifd(url, off, big=True):
+    cw, ew, ow = (8, 20, 8) if big else (2, 12, 4)
+    head = get(url, off, off + cw - 1)
+    n = struct.unpack("<Q" if big else "<H", head)[0]
+    body = get(url, off + cw, off + cw + n * ew + ow - 1)
     tags = {}
     for i in range(n):
-        tag, typ, cnt = struct.unpack("<HHQ", body[i * 20:i * 20 + 12]); val = body[i * 20 + 12:i * 20 + 20]
+        e = body[i * ew:(i + 1) * ew]
+        if big:
+            tag, typ, cnt = struct.unpack("<HHQ", e[:12]); val = e[12:20]
+        else:
+            tag, typ, cnt = struct.unpack("<HHI", e[:8]); val = e[8:12]
         size = {1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 7: 1, 16: 8, 12: 8, 11: 4}.get(typ, 1)
         fmt = {1: "B", 3: "H", 4: "I", 5: "II", 16: "Q", 12: "d", 11: "f"}.get(typ)
         nbytes = cnt * size
-        if nbytes <= 8:
+        if nbytes <= ow:
             raw = val[:nbytes]
         else:
-            ptr = struct.unpack("<Q", val)[0]
+            ptr = struct.unpack("<Q" if big else "<I", val)[0]
             raw = get(url, ptr, ptr + nbytes - 1) if nbytes < (1 << 22) else b""
         vals = struct.unpack("<" + fmt * cnt, raw) if (fmt and len(raw) == nbytes) else (raw,)
         tags[tag] = vals
-    nxt = struct.unpack("<Q", body[n * 20:n * 20 + 8])[0]
+    nxt = struct.unpack("<Q" if big else "<I", body[n * ew:n * ew + ow])[0]
     return tags, nxt
 
 
 def layout(url):
     h = get(url, 0, 15)
-    assert h[:4] == b"II+\x00", h[:4]
-    ifd0 = struct.unpack("<Q", h[8:16])[0]
-    t0, ifd1 = parse_ifd(url, ifd0)
-    t1, ifd2 = parse_ifd(url, ifd1)
+    big = h[:4] == b"II+\x00"
+    assert big or h[:4] == b"II*\x00", h[:4]
+    ifd0 = struct.unpack("<Q", h[8:16])[0] if big else struct.unpack("<I", h[4:8])[0]
+    t0, ifd1 = parse_ifd(url, ifd0, big)
+    t1, ifd2 = parse_ifd(url, ifd1, big)
     W, H = t0[256][0], t0[257][0]; bps = t0[258][0]; comp = t0[259][0]
     rps = t0.get(278, (H,))[0]; so0, so1 = t0[273], t1[273]; bc0 = t0[279]
     total = get(url, 0, 0) and None
-    info = {"W": W, "H": H, "bits": bps, "compression": comp, "rows_per_strip": rps, "strips": len(so0),
+    info = {"big": big, "W": W, "H": H, "bits": bps, "compression": comp, "rows_per_strip": rps, "strips": len(so0),
             "ifd0": ifd0, "ifd1": ifd1, "ifd2": ifd2, "ifd_stride": ifd1 - ifd0, "ifd_stride2": ifd2 - ifd1,
             "data0": so0[0], "data1": so1[0], "data_stride": so1[0] - so0[0], "page_bytes": sum(bc0),
             "contiguous_page": all(so0[i + 1] - so0[i] == bc0[i] for i in range(len(so0) - 1))}
@@ -80,7 +86,7 @@ def data_offset(info, k):
 def verify_offset(url, info, k):
     """Parse page k's IFD at its predicted position and compare its strip offset with data_offset()."""
     ifd = data_offset(info, k) + info["page_bytes"]; ifd += ifd % 2
-    tags, _ = parse_ifd(url, ifd)
+    tags, _ = parse_ifd(url, ifd, info["big"])
     return tags[273][0] == data_offset(info, k)
 
 

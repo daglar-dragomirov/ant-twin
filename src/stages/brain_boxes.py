@@ -107,6 +107,11 @@ def main(cfg, out):
     chosen = select(elig, cfg["n_specimens"], cfg["seed"])
     print(f"selected {len(chosen)} specimens over {len({e['subfamily'] for e in chosen})} subfamilies")
     with open(out / "manifest.jsonl", "w", encoding="utf-8") as mf, cf.ThreadPoolExecutor(cfg["workers"]) as ex:
-        for rec in ex.map(lambda e: one(e, cfg, out), chosen):
+        def safe(e):
+            try:
+                return one(e, cfg, out)
+            except Exception as ex_:
+                return {"vial": vial_code(e["vial"]), "species": e["species"], "status": "error", "error": repr(ex_)[:300]}
+        for rec in ex.map(safe, chosen):
             mf.write(json.dumps(rec, ensure_ascii=False) + "\n"); mf.flush()
             print(rec["vial"], rec["species"], rec["status"], rec.get("box_shape"), rec.get("sec"))
