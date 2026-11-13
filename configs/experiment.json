@@ -1,1 +1,9 @@
-{"stage": "specimen_table"}
+{"stage": "cuticle_replication",
+ "species_table_run": "20261113-153618_specimen-table-v2-fix-species-name-joins_DESKTOP-7Q7S0N3",
+ "tree_dir": "C:/projects/dsc-biology/research/ant-twin/work/economo2018/inner/Dryad_archive/15k_all_ant_trees",
+ "tree_r2_prefix": "ant-twin/meta/economo2018/15k_all_ant_trees",
+ "mcc": "15k_NCuniform_stem_mcc.tre",
+ "posterior": {"nc_stem_100": ["15k_NCuniform_stem_posterior.tre"],
+               "fbd_crown_stem_200": ["15K_FBD_crown_posterior.tre", "15K_FBD_stem_posterior.tre"]},
+ "rscript": "C:/Users/Daglar/tools/R-4.6.2/bin/Rscript.exe",
+ "r_libs": "C:/Users/Daglar/tools/R-lib"}

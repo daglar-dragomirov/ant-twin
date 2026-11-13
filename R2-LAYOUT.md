@@ -14,6 +14,7 @@
 2. **Журнал всех запусков** — `ant-twin/RUNLOG.jsonl`. Одна строка на запуск, в порядке времени, со ссылкой на папку запуска.
 3. **Данные и модели:**
    - `ant-twin/data-manifests/` — что скачано: экземпляр, URL, байты, sha256;
+   - `ant-twin/meta/economo2018/15k_all_ant_trees/` — деревья Economo et al. 2018 (Dryad, CC0): MCC и апостериорные, `MANIFEST.json` с sha256; их читает узел `cuticle_replication` и будущий анализ мозга, если локальной копии нет;
    - `ant-twin/labels/` — ручные и полуавтоматические маски мозга с версиями;
    - `ant-twin/models/` — веса сетей с версиями и хэшами;
    - `ant-twin/results/` — таблицы измерений;
