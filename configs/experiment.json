@@ -1,1 +1,1 @@
-{"stage": "smoke"}
+{"stage": "brain_boxes", "n_specimens": 40, "seed": 20261113, "lowres_zstep": 2, "pad_frac": 0.5, "max_box_um": 2500, "workers": 3}
