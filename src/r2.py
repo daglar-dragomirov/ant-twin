@@ -1,26 +1,42 @@
-"""Cloudflare R2 (S3) helper for the doctorate logs. Credentials are read at runtime from the user's own file;
-nothing secret is printed or written anywhere.
-Usage: python -I r2.py list-buckets | ensure-bucket <name> | put <bucket> <key> <localfile> | ls <bucket> [prefix] | put-text <bucket> <key> <text>
+"""Cloudflare R2 (S3) helper for the doctorate. Credentials are read at runtime, never printed or committed:
+  1) ~/.config/dsc/r2.json  {"access_key": ..., "secret_key": ..., "endpoint": ...}  (used on pods; copied over SSH)
+  2) the user's original credentials file on Yandex.Disk (used on the user's PC).
+CLI: python -I r2.py list-buckets | ensure-bucket <b> | put <b> <key> <file> | ls <b> [prefix] | export-json <path>
 """
-import sys, re, pathlib
+import sys, re, json, pathlib
 import boto3
 
-CRED = pathlib.Path(r"C:\yandex.disk-daglar.dragomirov\Yandex.Disk\16_Доступы_и_безопасность\Cloudflare_R2_S3\Cloudflare_R2_S3_доступы — MAIN.txt")
+YANDEX = pathlib.Path(r"C:\yandex.disk-daglar.dragomirov\Yandex.Disk\16_Доступы_и_безопасность\Cloudflare_R2_S3\Cloudflare_R2_S3_доступы — MAIN.txt")
+LOCAL = pathlib.Path.home() / ".config" / "dsc" / "r2.json"
+BUCKET = "dsc-biology"
 
 
 def creds():
-    lines = [l.strip() for l in CRED.read_text(encoding="utf-8").splitlines()]
+    if LOCAL.exists():
+        j = json.loads(LOCAL.read_text(encoding="utf-8"))
+        return j["access_key"], j["secret_key"], j["endpoint"]
+    lines = [l.strip() for l in YANDEX.read_text(encoding="utf-8").splitlines()]
     def after(label):
         i = lines.index(label)
         return next(l for l in lines[i + 1:] if l and l != "Click to copy")
-    ak, sk = after("Access Key ID"), after("Secret Access Key")
     ep = next(l for l in lines if re.match(r"^https://[0-9a-f]+\.r2\.cloudflarestorage\.com$", l))
-    return ak, sk, ep
+    return after("Access Key ID"), after("Secret Access Key"), ep
 
 
 def client():
     ak, sk, ep = creds()
     return boto3.client("s3", endpoint_url=ep, aws_access_key_id=ak, aws_secret_access_key=sk, region_name="auto")
+
+
+def list_keys(c, bucket, prefix):
+    out, tok = {}, None
+    while True:
+        kw = {"Bucket": bucket, "Prefix": prefix}
+        if tok: kw["ContinuationToken"] = tok
+        r = c.list_objects_v2(**kw)
+        for o in r.get("Contents", []): out[o["Key"]] = o["Size"]
+        if not r.get("IsTruncated"): return out
+        tok = r["NextContinuationToken"]
 
 
 if __name__ == "__main__":
@@ -33,8 +49,8 @@ if __name__ == "__main__":
         else: print("exists", sys.argv[2])
     elif cmd == "put":
         c.upload_file(sys.argv[4], sys.argv[2], sys.argv[3]); print("put", sys.argv[3])
-    elif cmd == "put-text":
-        c.put_object(Bucket=sys.argv[2], Key=sys.argv[3], Body=sys.argv[4].encode("utf-8")); print("put", sys.argv[3])
     elif cmd == "ls":
-        pre = sys.argv[3] if len(sys.argv) > 3 else ""
-        for o in c.list_objects_v2(Bucket=sys.argv[2], Prefix=pre).get("Contents", []): print(o["Size"], o["Key"])
+        for k, s in list_keys(c, sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "").items(): print(s, k)
+    elif cmd == "export-json":  # write creds for copying to a pod over SSH (file stays outside any repo)
+        ak, sk, ep = creds(); p = pathlib.Path(sys.argv[2]); p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"access_key": ak, "secret_key": sk, "endpoint": ep}), encoding="utf-8"); print("written", p)
