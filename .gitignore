@@ -1,0 +1,7 @@
+data/
+outputs/
+*.npy
+*.npz
+*.tif
+__pycache__/
+.env*
