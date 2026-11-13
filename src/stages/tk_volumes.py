@@ -14,7 +14,7 @@ from scipy import ndimage as ndi
 from PIL import Image
 import r2
 
-PAT = re.compile(r"^training/(?P<stack>[^/]+)_(?P<idx>-?\d+)(?P<mask>_mask)?\.tif$")
+PAT = re.compile(r"^training/(?!\._)(?P<stack>[^/]+)_(?P<idx>-?\d+)(?P<mask>_mask)?\.tif$")  # skip macOS AppleDouble ._*
 
 
 def species_of(stack):
