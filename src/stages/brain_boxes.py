@@ -1,6 +1,8 @@
 """Stage brain_boxes: pick a stratified training set, propose a brain box on the low-res stack, fetch that box from the
 full-resolution BigTIFF via HTTP Range, and write QC images. Config keys (configs/experiment.json):
-  n_specimens, seed, lowres_zstep, pad_frac, max_box_um, workers
+  v1: n_specimens, seed, lowres_zstep, pad_frac, max_box_um, workers (5x folder only, configs/eligible_workers.json)
+  v2: specimens_run (R2 run of specimen_table), exclude_run (R2 run of an earlier brain_boxes), n_unstained, n_iodine
+      -> all AntScan folders; per-specimen url_full / low-res prefix / voxel size from specimens.csv
 Outputs: boxes/<vial>.npy (uint8 full-res box), qc/<vial>.png, manifest.jsonl (one line per specimen).
 """
 import json, random, hashlib, time, io, urllib.request, concurrent.futures as cf, pathlib
@@ -14,7 +16,8 @@ ROOT = "https://biomedisa.info/media/antscan/processed/5x"
 
 
 def vial_code(v):
-    a, b = v.split("-"); return "%02d-%02d" % (int(a), int(b))
+    p = str(v).split("-")  # 5x vials are 'N-M' -> zero-padded; other folders keep their own codes
+    return "%02d-%02d" % (int(p[0]), int(p[1])) if len(p) == 2 and all(x.isdigit() for x in p) else str(v)
 
 
 def http_ok(url):
@@ -25,8 +28,8 @@ def http_ok(url):
         return False
 
 
-def lowres_stack(vial, zstep):
-    base = f"{ROOT}/{vial}_lowres/slice_%04d.png"
+def lowres_stack(vial, zstep, base=None):
+    base = base or f"{ROOT}/{vial}_lowres/slice_%04d.png"
     if not http_ok(base % 0): return None, 0
     lo, hi = 0, 256
     while hi < 20000 and http_ok(base % hi): lo, hi = hi, hi * 2
@@ -76,7 +79,8 @@ def one(e, cfg, out):
     vial = vial_code(e["vial"]); rec = {"vial": vial, "species": e["species"], "subfamily": e["subfamily"], "code": e["code"],
                                        "colony": e["colony"], "body_um3": e["body_um3"]}
     t0 = time.time()
-    v, nlow = lowres_stack(vial, cfg["lowres_zstep"])
+    vox = float(e.get("voxel", 2.44)); rec["voxel_um"] = vox; rec["folder"] = e.get("folder", "5x"); rec["stained"] = e.get("stained")
+    v, nlow = lowres_stack(vial, cfg["lowres_zstep"], e.get("lowres_base"))
     if v is None: rec["status"] = "no_lowres"; return rec
     try:
         V, body, brain, info = LS.seg(v, e["body_um3"])
@@ -85,11 +89,11 @@ def one(e, cfg, out):
     zz, yy, xx = np.nonzero(brain); off = info["crop_offset"]
     # reduced coords -> low-res stack coords: z unchanged (already zstep-subsampled), y/x x2, plus crop offset
     lz = (zz + off[0]) * cfg["lowres_zstep"]; ly = (yy + off[1]) * 2; lx = (xx + off[2]) * 2
-    url = f"{ROOT}/{vial}.tif"; info_t = BT.layout(url); size, npages = BT.n_pages(url, info_t)
+    url = e.get("url_full") or f"{ROOT}/{vial}.tif"; info_t = BT.layout(url); size, npages = BT.n_pages(url, info_t)
     fz, fy, fx = npages / nlow, info_t["H"] / v.shape[1], info_t["W"] / v.shape[2]
     lo = np.array([lz.min() * fz, ly.min() * fy, lx.min() * fx]); hi = np.array([(lz.max() + 1) * fz, (ly.max() + 1) * fy, (lx.max() + 1) * fx])
     c, half = (lo + hi) / 2, (hi - lo) / 2 * (1 + cfg["pad_frac"])
-    half = np.minimum(half, cfg["max_box_um"] / 2.44 / 2)
+    half = np.minimum(half, cfg["max_box_um"] / vox / 2)
     z0, y0, x0 = np.maximum(np.floor(c - half), 0).astype(int)
     z1, y1, x1 = np.minimum(np.ceil(c + half), [npages, info_t["H"], info_t["W"]]).astype(int)
     if info_t["compression"] == 1:
@@ -97,7 +101,7 @@ def one(e, cfg, out):
         box = BT.crop(url, info_t, z0, z1, y0, y1, x0, x1); rec["fetch"] = "range"
     else:  # compressed classic TIFF (small specimens): download whole file once, decode the needed pages
         import tifffile, tempfile, os, shutil
-        tmp = pathlib.Path(tempfile.gettempdir()) / f"antscan_{vial}.tif"
+        tmp = pathlib.Path(tempfile.gettempdir()) / f"antscan_{e.get('key', vial)}.tif"
         with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=600) as r, open(tmp, "wb") as f:
             shutil.copyfileobj(r, f, 1 << 22)
         with tifffile.TiffFile(tmp) as tf:
@@ -106,23 +110,63 @@ def one(e, cfg, out):
             box = np.stack([tf.pages[k].asarray()[y0:y1, x0:x1] for k in range(z0, z1)])
         os.remove(tmp); rec["fetch"] = "full_file_compressed"
     (out / "boxes").mkdir(exist_ok=True); (out / "qc").mkdir(exist_ok=True)
-    p = out / "boxes" / f"{vial}.npy"; np.save(p, box); qc_png(box, out / "qc" / f"{vial}.png")
-    rec.update(status="ok", url=url, file_bytes=size, n_pages=npages, lowres_slices=nlow, box_zyx=[int(z0), int(z1), int(y0), int(y1), int(x0), int(x1)],
+    key = e.get("key", vial)
+    p = out / "boxes" / f"{key}.npy"; np.save(p, box); qc_png(box, out / "qc" / f"{key}.png")
+    rec.update(status="ok", key=key, url=url, file_bytes=size, n_pages=npages, lowres_slices=nlow, box_zyx=[int(z0), int(z1), int(y0), int(y1), int(x0), int(x1)],
                box_shape=list(box.shape), box_sha256=hashlib.sha256(box.tobytes()).hexdigest(), lowres_brain_vox=int(brain.sum()),
                proposal=info.get("best"), sec=round(time.time() - t0, 1))
     return rec
 
 
+def select_v2(cfg):
+    """One worker per species with colony size, from all folders; stratified round-robin over subfamilies, separately for
+    unstained and iodine-stained scans; species already boxed in exclude_run are skipped. Body volume (owners' S1, only for
+    part of the 5x specimens) is rescaled to the scan voxel size so the low-res heuristic sees a consistent voxel count."""
+    import pandas as pd, r2
+    c = r2.client(); get = lambda k: c.get_object(Bucket=r2.BUCKET, Key=k)["Body"].read()
+    d = pd.read_csv(io.BytesIO(get(f"ant-twin/runs/{cfg['specimens_run']}/outputs/specimens.csv")))
+    d = d[(d.caste == "worker") & d.colony_any.notna() & d.url_full.notna() & d.url_lowres_slice0.notna()]
+    done_sp = set()
+    if cfg.get("exclude_run"):
+        man = [json.loads(l) for l in get(f"ant-twin/runs/{cfg['exclude_run']}/outputs/manifest.jsonl").decode().splitlines() if l.strip()]
+        done_sp = {m["species"].replace(".", " ").lower() for m in man if m.get("status") == "ok"}
+    body = {e["code"]: e["body_um3"] for e in json.loads(pathlib.Path("configs/eligible_workers.json").read_text(encoding="utf-8"))}
+    rnd = random.Random(cfg["seed"]); out = []
+    for stain, n in (("unstained", cfg["n_unstained"]), ("iodine", cfg["n_iodine"])):
+        g = d[d.stained == stain].sample(frac=1, random_state=cfg["seed"])
+        g = g.sort_values("voxel_um", key=lambda v: (v - 2.44).abs(), kind="stable").drop_duplicates("species_key")
+        g = g[~g.species_key.str.replace("_", " ").isin(done_sp)]
+        by_sf = {}
+        for r in g.to_dict("records"): by_sf.setdefault(str(r["subfamily"]), []).append(r)
+        for v in by_sf.values(): rnd.shuffle(v)
+        pick = []
+        while len(pick) < n and any(by_sf.values()):
+            for k in sorted(by_sf):
+                if by_sf[k] and len(pick) < n: pick.append(by_sf[k].pop())
+        for r in pick:
+            vox = float(r["voxel_um"]); b = body.get(r["specimen_code"])
+            out.append({"species": r["name"], "species_key": r["species_key"], "subfamily": str(r["subfamily"]), "code": r["specimen_code"],
+                        "vial": r["vial"], "folder": r["folder"], "stained": stain, "voxel": vox, "colony": r["colony_any"],
+                        "body_um3": (b * (2.44 / vox) ** 3) if b else None, "url_full": r["url_full"],
+                        "lowres_base": r["url_lowres_slice0"].replace("slice_0000.png", "slice_%04d.png"),
+                        "key": f"{r['folder']}__{vial_code(r['vial'])}"})
+    return out
+
+
 def main(cfg, out):
-    elig = json.loads(pathlib.Path("configs/eligible_workers.json").read_text(encoding="utf-8"))
-    chosen = select(elig, cfg["n_specimens"], cfg["seed"])
+    if cfg.get("specimens_run"):
+        chosen = select_v2(cfg)
+    else:
+        elig = json.loads(pathlib.Path("configs/eligible_workers.json").read_text(encoding="utf-8"))
+        chosen = select(elig, cfg["n_specimens"], cfg["seed"])
+    (out / "selection.json").write_text(json.dumps(chosen, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"selected {len(chosen)} specimens over {len({e['subfamily'] for e in chosen})} subfamilies")
     with open(out / "manifest.jsonl", "w", encoding="utf-8") as mf, cf.ThreadPoolExecutor(cfg["workers"]) as ex:
         def safe(e):
             try:
                 return one(e, cfg, out)
             except Exception as ex_:
-                return {"vial": vial_code(e["vial"]), "species": e["species"], "status": "error", "error": repr(ex_)[:300]}
+                return {"vial": vial_code(e["vial"]), "key": e.get("key"), "folder": e.get("folder"), "species": e["species"], "status": "error", "error": repr(ex_)[:300]}
         for rec in ex.map(safe, chosen):
             mf.write(json.dumps(rec, ensure_ascii=False) + "\n"); mf.flush()
-            print(rec["vial"], rec["species"], rec["status"], rec.get("box_shape"), rec.get("sec"))
+            print(rec.get("key", rec["vial"]), rec["species"], rec["status"], rec.get("box_shape"), rec.get("sec"), flush=True)
