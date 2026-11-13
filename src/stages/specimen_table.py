@@ -38,7 +38,9 @@ def main(cfg, out):
         n = next(n for n in oz.namelist() if prefix in n and n.endswith(".xlsx"))
         return pd.read_excel(io.BytesIO(oz.read(n)))
     s1, s3 = owners("Dataset_S1"), owners("Dataset_S3")
-    br = pd.read_excel(io.BytesIO(raw["bell_roberts_xlsx"]), "Supplementary Table 20")
+    br = pd.read_excel(io.BytesIO(raw["bell_roberts_xlsx"]), "Supplementary Table 20", header=None)
+    hdr = next(i for i in range(10) if str(br.iloc[i, 0]).strip() == "species")
+    br.columns = [str(c) for c in br.iloc[hdr]]; br = br.iloc[hdr + 1:].reset_index(drop=True)
 
     folder = meta["LSDF_parent_folder"].str.extract(r"processed/([^/]+)/")[0]
     vial = meta["vial_label"].astype(str).str.strip()
@@ -53,17 +55,17 @@ def main(cfg, out):
     t["url_lowres_slice0"] = BASE + "/" + t["folder"] + "/" + t["vial"] + "_lowres/slice_0000.png"
 
     # owners' colony sizes: species-level geometric mean of reported means, and max of maxima
-    s3k = s3.assign(species_key=(s3["Valid Genus"].astype(str) + " " + s3["Valid Species Name"].astype(str)).map(key))
+    s3k = s3.assign(species_key=s3["Valid Species Name"].map(key))
     s3k["mean"] = pd.to_numeric(s3k["Mean Size"], errors="coerce"); s3k["max"] = pd.to_numeric(s3k["Maximum Size"], errors="coerce")
     g = s3k.dropna(subset=["species_key"]).groupby("species_key")
     own = pd.DataFrame({"colony_mean_owners": g["mean"].apply(lambda v: float(np.exp(np.log(v.dropna()).mean())) if v.notna().any() else np.nan),
                         "colony_max_owners": g["max"].max(), "colony_n_records_owners": g.size()})
     # Bell-Roberts: detect species and colony-size columns by name
     bcols = {c: c for c in br.columns}
-    sp_col = next(c for c in br.columns if re.search(r"species|taxon|name", str(c), re.I))
-    col_col = next((c for c in br.columns if re.search(r"colony", str(c), re.I)), None)
-    caste_col = next((c for c in br.columns if re.search(r"caste", str(c), re.I)), None)
-    queen_col = next((c for c in br.columns if re.search(r"queen", str(c), re.I)), None)
+    sp_col = "species"
+    col_col = "colony.size"
+    caste_col = "caste.number"
+    queen_col = "queen.number.continuous"
     brk = br.assign(species_key=br[sp_col].map(key)).dropna(subset=["species_key"]).drop_duplicates("species_key").set_index("species_key")
     bro = pd.DataFrame(index=brk.index)
     for nm, c in (("colony_br", col_col), ("n_worker_castes_br", caste_col), ("n_queens_br", queen_col)):
