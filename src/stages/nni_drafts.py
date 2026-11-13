@@ -1,7 +1,8 @@
 """Stage nni_drafts: draft brain masks with nnInteractive (DKFZ; weights CC BY-NC-SA 4.0, used only for draft labels that a
 human reviews) on full-resolution brain boxes produced by the brain_boxes stage (read from R2).
 Prompt: one positive point at the box centre (the box was centred on the low-res brain proposal), optionally downsampled.
-Config: source_run (R2 run id of brain_boxes), downsample, max_specimens.
+Config: source_run (R2 run id of brain_boxes), downsample (int, or "auto": round(target_um / voxel_um), target_um default 4.88),
+max_specimens, n_clicks. Boxes/masks are keyed by manifest 'key' (folder__vial) when present, else by vial.
 Outputs: masks/<vial>.npy (uint8, same grid as the box after downsampling), qc/<vial>.png, drafts.jsonl.
 """
 import os, io, json, time, pathlib
@@ -60,10 +61,11 @@ def main(cfg, out):
     man = [json.loads(l) for l in c.get_object(Bucket=r2.BUCKET, Key=pre + "manifest.jsonl")["Body"].read().decode().splitlines() if l.strip()]
     ok = [m for m in man if m.get("status") == "ok"][: cfg.get("max_specimens", 999)]
     (out / "masks").mkdir(exist_ok=True); (out / "qc").mkdir(exist_ok=True)
-    ds = int(cfg.get("downsample", 1))
     with open(out / "drafts.jsonl", "w", encoding="utf-8") as f:
         for m in ok:
-            t0 = time.time(); v = m["vial"]
+            t0 = time.time(); v = m.get("key") or m["vial"]
+            ds = cfg.get("downsample", 1)
+            ds = max(1, round(cfg.get("target_um", 4.88) / float(m.get("voxel_um", 2.44)))) if ds == "auto" else int(ds)
             box = np.load(io.BytesIO(c.get_object(Bucket=r2.BUCKET, Key=pre + f"boxes/{v}.npy")["Body"].read()))
             vol = box[::ds, ::ds, ::ds] if ds > 1 else box
             s.set_image(vol[None].astype(np.uint8))
@@ -81,7 +83,7 @@ def main(cfg, out):
             _, ctr, mk = best
             np.save(out / "masks" / f"{v}.npy", mk); overlay(vol, mk, out / "qc" / f"{v}.png")
             touches = bool(mk[0].any() or mk[-1].any() or mk[:, 0].any() or mk[:, -1].any() or mk[:, :, 0].any() or mk[:, :, -1].any())
-            rec = {"vial": v, "species": m["species"], "box_shape": list(box.shape), "downsample": ds, "click": ctr,
+            rec = {"vial": m["vial"], "key": v, "folder": m.get("folder"), "stained": m.get("stained"), "voxel_um": m.get("voxel_um"), "species": m["species"], "box_shape": list(box.shape), "downsample": ds, "click": ctr,
                    "mask_vox": int(mk.sum()), "candidates": tried, "mask_vox_fullres_est": int(mk.sum()) * ds ** 3, "touches_box_edge": touches, "sec": round(time.time() - t0, 1)}
             f.write(json.dumps(rec, ensure_ascii=False) + "\n"); f.flush(); print(json.dumps(rec, ensure_ascii=False))
             s.reset_interactions()

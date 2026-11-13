@@ -1,1 +1,1 @@
-{"stage": "brain_boxes", "specimens_run": "20261113-153618_specimen-table-v2-fix-species-name-joins_DESKTOP-7Q7S0N3", "exclude_run": "20261113-142934_brain-labels-v1-training-set-and-full-res-brain_DESKTOP-7Q7S0N3", "n_unstained": 120, "n_iodine": 30, "seed": 20261114, "lowres_zstep": 2, "pad_frac": 0.8, "max_box_um": 3000, "workers": 6}
+{"stage": "nni_drafts", "source_run": "20261113-162908_brain-boxes-v2-150-training-specimens-from-all-f_6945dce09bf2", "downsample": "auto", "target_um": 4.88, "max_specimens": 999, "n_clicks": 5}
