@@ -1,1 +1,1 @@
-{"stage": "specimen_table"}
+{"stage": "tk_volumes", "r2_key": "ant-twin/data/toulkeridou2023/training.zip", "local_zip": "/root/data/tk_training.zip", "dataset_id": 501, "n_folds": 5, "seed": 20261113}
