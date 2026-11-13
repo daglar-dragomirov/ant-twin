@@ -14,8 +14,13 @@ import r2
 
 
 def sh(cmd, env):
-    print("$", " ".join(cmd), flush=True); t0 = time.time()
-    subprocess.run(cmd, env=env, check=True); print(f"  done in {time.time()-t0:.0f}s", flush=True)
+    """Run a command, streaming its stdout+stderr into our (teed, R2-synced) stdout; print free disk first."""
+    free = shutil.disk_usage(env.get("nnUNet_raw", "/")).free / 1e9
+    print("$", " ".join(cmd), f"[free disk {free:.1f} GB]", flush=True); t0 = time.time()
+    p = subprocess.Popen(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+    for line in p.stdout: print(line, end="", flush=True)
+    if p.wait(): raise RuntimeError(f"{cmd[0]} exited {p.returncode}")
+    print(f"  done in {time.time()-t0:.0f}s", flush=True)
 
 
 def overlay(vol, m, path):
