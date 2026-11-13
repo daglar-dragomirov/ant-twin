@@ -74,7 +74,7 @@ def main(cfg, out):
                 s.add_point_interaction(ctr, include_interaction=True)
                 cm = tgt.numpy().astype(np.uint8).copy(); frac = cm.sum() / cm.size
                 edge = int(cm[0].sum() + cm[-1].sum() + cm[:, 0].sum() + cm[:, -1].sum() + cm[:, :, 0].sum() + cm[:, :, -1].sum())
-                ok_ = 0.01 <= frac <= 0.35
+                ok_ = bool(0.01 <= frac <= 0.35)
                 score = (ok_, -edge / max(cm.sum(), 1), cm.sum())
                 tried.append({"click": ctr, "vox": int(cm.sum()), "frac": round(float(frac), 4), "edge_vox": edge, "plausible": ok_})
                 if best is None or score > best[0]: best = (score, ctr, cm)
