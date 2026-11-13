@@ -92,8 +92,19 @@ def one(e, cfg, out):
     half = np.minimum(half, cfg["max_box_um"] / 2.44 / 2)
     z0, y0, x0 = np.maximum(np.floor(c - half), 0).astype(int)
     z1, y1, x1 = np.minimum(np.ceil(c + half), [npages, info_t["H"], info_t["W"]]).astype(int)
-    if not BT.verify_offset(url, info_t, z1 - 1): rec["status"] = "layout_irregular"; return rec
-    box = BT.crop(url, info_t, z0, z1, y0, y1, x0, x1)
+    if info_t["compression"] == 1:
+        if not BT.verify_offset(url, info_t, z1 - 1): rec["status"] = "layout_irregular"; return rec
+        box = BT.crop(url, info_t, z0, z1, y0, y1, x0, x1); rec["fetch"] = "range"
+    else:  # compressed classic TIFF (small specimens): download whole file once, decode the needed pages
+        import tifffile, tempfile, os, shutil
+        tmp = pathlib.Path(tempfile.gettempdir()) / f"antscan_{vial}.tif"
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=600) as r, open(tmp, "wb") as f:
+            shutil.copyfileobj(r, f, 1 << 22)
+        with tifffile.TiffFile(tmp) as tf:
+            npages = len(tf.pages)
+            z1 = min(z1, npages)
+            box = np.stack([tf.pages[k].asarray()[y0:y1, x0:x1] for k in range(z0, z1)])
+        os.remove(tmp); rec["fetch"] = "full_file_compressed"
     (out / "boxes").mkdir(exist_ok=True); (out / "qc").mkdir(exist_ok=True)
     p = out / "boxes" / f"{vial}.npy"; np.save(p, box); qc_png(box, out / "qc" / f"{vial}.png")
     rec.update(status="ok", url=url, file_bytes=size, n_pages=npages, lowres_slices=nlow, box_zyx=[int(z0), int(z1), int(y0), int(y1), int(x0), int(x1)],
