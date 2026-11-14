@@ -89,12 +89,15 @@ def main(cfg, out):
             vc, off = crop_to_specimen(v, cfg.get("crop_margin", 40))
             vt, sp1t = np.array(vc.shape)[tf], sp1[tf]
             new_shape_t = [max(8, int(round(s_ * a / b_))) for s_, a, b_ in zip(vt, sp1t, tsp_t)]
-            huge = int(np.prod(new_shape_t)) > cfg.get("huge_voxels", 2e8)  # very large plan-space volume: resample + accumulate on CPU
+            nvox = int(np.prod(new_shape_t))
+            huge = nvox > cfg.get("huge_voxels", 2e8)              # accumulate logits on CPU
+            cpu_interp = huge or nvox > cfg.get("cpu_interp_voxels", 1.5e9)  # CUDA trilinear fails beyond ~2^31 elements
             x = torch.from_numpy(np.ascontiguousarray(vc.transpose(tf)).astype(np.float32))
-            if not huge: x = x.to(dev)
+            if not cpu_interp: x = x.to(dev)
             x = ((x.clamp(lo_i, hi_i) - mu_i) / sd_i)[None, None]
             with torch.no_grad():
                 x = F.interpolate(x, size=new_shape_t, mode="trilinear", align_corners=False)[0]
+                if cpu_interp and not huge: x = x.to(dev); base["cpu_interp"] = True
                 if huge: pred.perform_everything_on_device = False; base["cpu_path"] = True
                 try:
                     logits = pred.predict_sliding_window_return_logits(x)
