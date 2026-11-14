@@ -75,6 +75,11 @@ def main(cfg, out):
                                                "url_full": r["url_full"], "n_components": int(n), **{k: geo[k] for k in ("P", "H", "W", "nlow", "lowres_shape", "spacing_um")}}
                 if n == 0: rec["status"] = "no_brain"; fo.write(json.dumps(rec) + "\n"); continue
                 sizes = ndi.sum(p, lab, range(1, n + 1)); big = lab == (int(np.argmax(sizes)) + 1)
+                cand = []  # top-3 components (fallback candidates for a second round), low-res bbox + size
+                for ci in np.argsort(sizes)[::-1][:3]:
+                    cz, cy, cx = np.nonzero(lab == ci + 1)
+                    cand.append({"vox": int(sizes[ci]), "lowres_bbox": [int(cz.min() * ds), int(cy.min() * ds), int(cx.min() * ds), int((cz.max() + 1) * ds), int((cy.max() + 1) * ds), int((cx.max() + 1) * ds)]})
+                rec["candidates"] = cand
                 zz, yy, xx = np.nonzero(big); sp = geo["spacing_um"]
                 lo = np.array([zz.min(), yy.min(), xx.min()]) * ds; hi = (np.array([zz.max(), yy.max(), xx.max()]) + 1) * ds
                 f = np.array(geo["f"]); c_ = (lo + hi) / 2 * f; half = (hi - lo) / 2 * f * (1 + cfg.get("margin_frac", 0.4))
