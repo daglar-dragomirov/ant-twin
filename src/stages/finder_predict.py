@@ -56,19 +56,32 @@ def main(cfg, out):
         except Exception as ex:
             return key, r, None, {"status": "error", "error": repr(ex)[:200]}
 
+    def done_elsewhere():
+        ks = set()
+        for run in cfg.get("skip_runs", []):
+            try:
+                for l in c.get_object(Bucket=r2.BUCKET, Key=f"ant-twin/runs/{run}/outputs/finder.jsonl")["Body"].read().decode().splitlines():
+                    if l.strip(): ks.add(json.loads(l)["key"])
+            except Exception: pass
+        return ks
+    keyof = lambda r: f"{r['folder']}__{vial_code(r['vial'])}"
+    skip = done_elsewhere(); recs = [r for r in recs if keyof(r) not in skip]; print(f"after skipping done keys: {len(recs)}", flush=True)
     n_done = 0
     with open(out / "finder.jsonl", "w", encoding="utf-8") as fo:
         for b0 in range(0, len(recs), B):
+            skip = done_elsewhere()
+            if all(keyof(r) in skip for r in recs[b0: b0 + B]): continue
             t0 = time.time(); I, O = W / "fin_in", W / "fin_out"
             shutil.rmtree(I, ignore_errors=True); shutil.rmtree(O, ignore_errors=True); I.mkdir(parents=True); O.mkdir(parents=True)
-            with cf.ThreadPoolExecutor(cfg.get("workers", 6)) as ex: got = list(ex.map(prep, enumerate(recs[b0: b0 + B], b0)))
+            batch = [(i, r) for i, r in enumerate(recs[b0: b0 + B], b0) if keyof(r) not in skip]
+            with cf.ThreadPoolExecutor(cfg.get("workers", 6)) as ex: got = list(ex.map(prep, batch))
             todo = {}
             for j, (key, r, img, geo) in enumerate(got):
                 if img is None:
                     fo.write(json.dumps({"key": key, "species": r["name"], **geo}) + "\n"); continue
                 cid = f"F_{b0 + j:04d}"; todo[cid] = (key, r, img, geo); sp = geo["spacing_um"]
                 nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.diag([sp[2], sp[1], sp[0], 1.0])), I / f"{cid}_0000.nii.gz")
-            if todo: sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", str(fold), "-tr", tr, "--disable_progress_bar"] + (["--disable_tta"] if cfg.get("disable_tta", True) else []), env)
+            if todo: sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", str(fold), "-tr", tr, "--disable_progress_bar", "-npp", str(cfg.get("npp", 1)), "-nps", str(cfg.get("nps", 1))] + (["--disable_tta"] if cfg.get("disable_tta", True) else []), env)
             for cid, (key, r, img, geo) in todo.items():
                 p = nib.load(str(O / f"{cid}.nii.gz")).get_fdata().astype(np.uint8).transpose(2, 1, 0)
                 lab, n = ndi.label(p); rec = {"key": key, "species": r["name"], "species_key": r["species_key"], "subfamily": r["subfamily"],
