@@ -35,6 +35,7 @@ def main(cfg, out):
     smasks = {k[len(smpre):-4] for k in r2.list_keys(c, r2.BUCKET, smpre)}
     have = {k[len(pre):-4] for k in r2.list_keys(c, r2.BUCKET, pre)}
     keys = sorted(src | set(rows))
+    if cfg.get("reverse"): keys = keys[::-1]  # second pod walks the list from the other end
     print(f"finder keys {len(rows)}, boxes_v3 {len(src)}, masks_v2 {len(smasks)}, boxes_v4 already {len(have)}, todo {len(keys)}", flush=True)
 
     def one(key):
