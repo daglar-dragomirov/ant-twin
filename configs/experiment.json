@@ -1,1 +1,1 @@
-{"stage": "boxes_v3", "finder_runs": ["20261114-103301_finder-v7c_f23f25d22603"], "workers": 6, "max_box_mb": 1500, "prefix": "ant-twin/cache/boxes_v3/"}
+{"stage": "boxes_v3", "finder_runs": ["20261114-121922_tiny-ant-path-both-specimen-ends-as-full-res-box_f23f25d22603"], "workers": 4, "max_box_mb": 1500, "prefix": "ant-twin/cache/boxes_v3/"}
