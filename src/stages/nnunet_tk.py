@@ -40,7 +40,7 @@ def main(cfg, out):
     env = {**os.environ, "nnUNet_raw": str(W / "raw"), "nnUNet_preprocessed": str(W / "pre"), "nnUNet_results": str(W / "res"),
            "nnUNet_n_proc_DA": str(cfg.get("n_proc_da", 8))}
     did, conf, fold, tr = cfg["dataset_id"], cfg["configuration"], cfg["fold"], cfg["trainer"]
-    name = f"Dataset{did}_AntBrainTK"
+    name = f"Dataset{did}_{cfg.get('dataset_name', 'AntBrainTK')}"
     # 1) fetch dataset from R2
     pre = f"ant-twin/runs/{cfg['dataset_run']}/outputs/"
     keys = r2.list_keys(c, r2.BUCKET, pre + f"nnUNet_raw/{name}/")
