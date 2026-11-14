@@ -50,8 +50,26 @@ def main(cfg, out):
                 if v is None: return key, r, None, {"status": "no_lowres"}
                 info = BT.layout(r["url_full"]); size, P = BT.n_pages(r["url_full"], info); H_, W_ = info["H"], info["W"]
             vox = float(r["voxel_um"]); fz, fy, fx = P / nlow, H_ / v.shape[1], W_ / v.shape[2]
-            sp = (vox * fz * ds, vox * fy * ds, vox * fx * ds); img = v[::ds, ::ds, ::ds]
-            geo = {"P": P, "H": H_, "W": W_, "nlow": nlow, "lowres_shape": list(v.shape), "f": [fz, fy, fx], "spacing_um": sp}
+            sp = (vox * fz * ds, vox * fy * ds, vox * fx * ds)
+            off = [0, 0, 0]
+            if cfg.get("crop_to_specimen", True):  # crop away the empty tube: bbox of cuticle-bright voxels + margin
+                from skimage.filters import threshold_multiotsu
+                sub = v[::4, ::4, ::4].astype(np.float32); t_hi = float(threshold_multiotsu(sub, classes=3)[-1])
+                bright = ndi.binary_opening(v[::2, ::2, ::2] > t_hi, iterations=1)
+                lab_, n_ = ndi.label(bright)
+                if n_:
+                    sz_ = ndi.sum(bright, lab_, range(1, n_ + 1)); keep_ = np.isin(lab_, [i + 1 for i in range(n_) if sz_[i] >= 0.01 * sz_.max()])
+                    # drop field-spanning components (tube wall)
+                    objs_ = ndi.find_objects(lab_)
+                    for i_, sl_ in enumerate(objs_):
+                        if sl_ is not None and (sl_[1].stop - sl_[1].start) > 0.8 * bright.shape[1] and (sl_[2].stop - sl_[2].start) > 0.8 * bright.shape[2]: keep_[lab_ == i_ + 1] = False
+                    if keep_.any():
+                        zz_, yy_, xx_ = np.nonzero(keep_); m_ = cfg.get("crop_margin", 12)
+                        z0_, y0_, x0_ = max(0, zz_.min() * 2 - m_), max(0, yy_.min() * 2 - m_), max(0, xx_.min() * 2 - m_)
+                        z1_, y1_, x1_ = min(v.shape[0], zz_.max() * 2 + 2 + m_), min(v.shape[1], yy_.max() * 2 + 2 + m_), min(v.shape[2], xx_.max() * 2 + 2 + m_)
+                        v = v[z0_:z1_, y0_:y1_, x0_:x1_]; off = [int(z0_), int(y0_), int(x0_)]
+            img = v[::ds, ::ds, ::ds]
+            geo = {"P": P, "H": H_, "W": W_, "nlow": nlow, "lowres_shape": list(v.shape), "f": [fz, fy, fx], "spacing_um": sp, "crop_offset": off}
             return key, r, img, geo
         except Exception as ex:
             return key, r, None, {"status": "error", "error": repr(ex)[:200]}
@@ -86,16 +104,18 @@ def main(cfg, out):
                 p = nib.load(str(O / f"{cid}.nii.gz")).get_fdata().astype(np.uint8).transpose(2, 1, 0)
                 lab, n = ndi.label(p); rec = {"key": key, "species": r["name"], "species_key": r["species_key"], "subfamily": r["subfamily"],
                                                "stained": r["stained"], "voxel_um": r["voxel_um"], "folder": r["folder"], "vial": r["vial"],
-                                               "url_full": r["url_full"], "n_components": int(n), **{k: geo[k] for k in ("P", "H", "W", "nlow", "lowres_shape", "spacing_um")}}
+                                               "url_full": r["url_full"], "n_components": int(n), **{k: geo[k] for k in ("P", "H", "W", "nlow", "lowres_shape", "spacing_um", "crop_offset")}}
                 if n == 0: rec["status"] = "no_brain"; fo.write(json.dumps(rec) + "\n"); continue
                 sizes = ndi.sum(p, lab, range(1, n + 1)); big = lab == (int(np.argmax(sizes)) + 1)
                 cand = []  # top-3 components (fallback candidates for a second round), low-res bbox + size
                 for ci in np.argsort(sizes)[::-1][:3]:
                     cz, cy, cx = np.nonzero(lab == ci + 1)
-                    cand.append({"vox": int(sizes[ci]), "lowres_bbox": [int(cz.min() * ds), int(cy.min() * ds), int(cx.min() * ds), int((cz.max() + 1) * ds), int((cy.max() + 1) * ds), int((cx.max() + 1) * ds)]})
+                    o_ = geo.get("crop_offset", [0, 0, 0])
+                    cand.append({"vox": int(sizes[ci]), "lowres_bbox": [int(cz.min() * ds + o_[0]), int(cy.min() * ds + o_[1]), int(cx.min() * ds + o_[2]), int((cz.max() + 1) * ds + o_[0]), int((cy.max() + 1) * ds + o_[1]), int((cx.max() + 1) * ds + o_[2])]})
                 rec["candidates"] = cand
                 zz, yy, xx = np.nonzero(big); sp = geo["spacing_um"]
-                lo = np.array([zz.min(), yy.min(), xx.min()]) * ds; hi = (np.array([zz.max(), yy.max(), xx.max()]) + 1) * ds
+                o_ = np.array(geo.get("crop_offset", [0, 0, 0]))
+                lo = np.array([zz.min(), yy.min(), xx.min()]) * ds + o_; hi = (np.array([zz.max(), yy.max(), xx.max()]) + 1) * ds + o_
                 f = np.array(geo["f"]); c_ = (lo + hi) / 2 * f; half = (hi - lo) / 2 * f * (1 + cfg.get("margin_frac", 0.4))
                 lim = np.array([geo["P"], geo["H"], geo["W"]])
                 z0, y0, x0 = np.maximum(np.floor(c_ - half), 0).astype(int); z1, y1, x1 = np.minimum(np.ceil(c_ + half), lim).astype(int)
