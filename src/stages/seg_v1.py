@@ -55,30 +55,49 @@ def main(cfg, out):
             case = f"AS_{i:03d}_{r_}"; case_sp[case] = ("AS", m["species"]); as_cases.append(case)
             nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.eye(4)), D / "imagesTr" / f"{case}_0000.nii.gz")
             nib.save(nib.Nifti1Image(np.ascontiguousarray(lab.transpose(2, 1, 0)), np.eye(4)), D / "labelsTr" / f"{case}.nii.gz")
-    # 2b) self-training round: agent-approved seg masks on finder boxes (boxes_v3 + brain_masks_v1 caches)
-    if cfg.get("extra_reviews"):
-        import pandas as pd
+    # 2b) agent-approved AntScan brains from several QC rounds (seg v3). Later sources override earlier ones per key.
+    if cfg.get("extra_sources"):
+        import pandas as pd, concurrent.futures as cf
         sp_tab = pd.read_csv(io.BytesIO(get(f"ant-twin/runs/{cfg['specimens_run']}/outputs/specimens.csv")))
         def vc(v):
             q = str(v).split("-"); return "%02d-%02d" % (int(q[0]), int(q[1])) if len(q) == 2 and all(x.isdigit() for x in q) else str(v)
         name_of = {f"{r.folder}__{vc(r.vial)}": r.name for r in sp_tab.itertuples()}
-        ex_good = []
-        for k in cfg["extra_reviews"]:
-            ex_good += [x["key"] for x in json.loads(get(k)) if x.get("mask") == "good" and x.get("box_on_head") is True]
-        n2 = 0
-        for i, key in enumerate(sorted(set(ex_good))):
+        tpg = json.loads(get(cfg["true_pages_key"]))
+        unchanged = lambda k: k in tpg and tpg[k]["pages"] == tpg[k]["pages_est"]
+        chosen = {}
+        for src in cfg["extra_sources"]:
+            for f in src["files"]:
+                for x in json.loads(get(f)):
+                    key = x["key"]; base = key.split("@")[0]
+                    if src.get("unchanged_only") and not unchanged(base): continue
+                    ok = x.get("mask") == "good" and x.get("box_on_head") is not False and x.get("brain_fully_in_box") is not False
+                    if src.get("require_on_head", True) and x.get("box_on_head") is not True: ok = False
+                    if ok: chosen[key] = (src["boxes_prefix"], src["masks_prefix"])
+                    elif src.get("bad_overrides", False) and key in chosen: chosen.pop(key)
+        items = sorted(chosen.items()); dupx = int(cfg.get("dup_extra", 1))
+        def build(i_item):
+            i, (key, (bpre, mpre)) = i_item
             try:
-                box = np.load(io.BytesIO(get(cfg["boxes_prefix"] + key + ".npz")))["box"]; mk = np.load(io.BytesIO(get(cfg["masks_prefix"] + key + ".npz")))["mask"]
+                box = np.load(io.BytesIO(get(bpre + key + ".npz")))["box"]; mk = np.load(io.BytesIO(get(mpre + key + ".npz")))["mask"]
             except Exception as ex_:
-                print("skip", key, ex_, flush=True); continue
+                return key, None, repr(ex_)[:120]
+            if mk.shape != box.shape or mk.sum() == 0: return key, None, "shape_or_empty"
             s2 = t / max(box.shape[1], box.shape[2])
             img = ndi.zoom(box, (1, s2, s2), order=1); lab = (ndi.zoom(mk.astype(np.float32), (1, s2, s2), order=1) > 0.5).astype(np.uint8)
-            for r_ in range(cfg.get("dup_extra", 2)):
-                case = f"AT_{i:03d}_{r_}"; case_sp[case] = ("AS2", name_of.get(key, key)); as_cases.append(case)
+            cs = []
+            for r_ in range(dupx):
+                case = f"AT_{i:04d}_{r_}"; cs.append(case)
                 nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.eye(4)), D / "imagesTr" / f"{case}_0000.nii.gz")
                 nib.save(nib.Nifti1Image(np.ascontiguousarray(lab.transpose(2, 1, 0)), np.eye(4)), D / "labelsTr" / f"{case}.nii.gz")
-            n2 += 1
-        print(f"self-training cases from {n2} agent-approved specimens", flush=True)
+            return key, cs, None
+        n2 = 0; srcs = {}
+        with cf.ThreadPoolExecutor(int(cfg.get("build_workers", 12))) as ex:
+            for key, cs, err in ex.map(build, enumerate(items)):
+                if cs is None: print("skip", key, err, flush=True); continue
+                for case in cs: case_sp[case] = ("AS2", name_of.get(key.split("@")[0], key)); as_cases.append(case)
+                srcs[key] = chosen[key][1]; n2 += 1
+        (out / "extra_sources_used.json").write_text(json.dumps(srcs, indent=1))
+        print(f"agent-approved AntScan specimens used: {n2}", flush=True)
     print(f"TK cases {sum(v[0] == 'TK' for v in case_sp.values())}, AntScan cases {len(as_cases)} from {len(good)} specimens", flush=True)
     (D / "dataset.json").write_text(json.dumps({"channel_names": {"0": "CT"}, "labels": {"background": 0, "brain": 1}, "numTraining": len(case_sp),
                                                 "file_ending": ".nii.gz", "description": "TK 2023 + auto-reviewed AntScan brains"}, indent=1))
@@ -90,24 +109,26 @@ def main(cfg, out):
     if not (W / "pre" / name / "nnUNetPlans.json").exists():
         sh(["nnUNetv2_plan_and_preprocess", "-d", str(did), "-c", conf, "--verify_dataset_integrity", "-np", "16"], env)
     (W / "pre" / name / "splits_final.json").write_text(json.dumps(folds, indent=1)); shutil.copy(W / "pre" / name / "splits_final.json", out / "splits_final.json")
-    # 4) train
-    sh(["nnUNetv2_train", str(did), conf, str(fold), "-tr", tr], env)
-    R = W / "res" / name / f"{tr}__nnUNetPlans__{conf}"
-    (out / "train_log").mkdir(exist_ok=True)
-    for f in (R / f"fold_{fold}").glob("*"):
-        if f.is_file() and f.suffix in (".txt", ".png", ".json"): shutil.copy(f, out / "train_log" / f.name)
-    for f in ("dataset.json", "plans.json", "dataset_fingerprint.json"):
-        if (R / f).exists(): shutil.copy(R / f, out / f)
-    shutil.copy(R / f"fold_{fold}" / "checkpoint_final.pth", out / "checkpoint_final.pth")
-    # 5) metrics on validation cases, split by source
-    V = R / f"fold_{fold}" / "validation"; per = {}
-    for p in V.glob("*.nii.gz"):
-        cs = p.name[:-7]; ref = nib.load(str(D / "labelsTr" / p.name)).get_fdata() > 0; pr = nib.load(str(p)).get_fdata() > 0
-        inter = int((ref & pr).sum()); per[cs] = {"source": case_sp[cs][0], "species": case_sp[cs][1], "dice": round(2 * inter / max(int(ref.sum() + pr.sum()), 1), 4),
-                                                  "rel_vol_err": round((int(pr.sum()) - int(ref.sum())) / max(int(ref.sum()), 1), 4)}
-    (out / "val_per_case.json").write_text(json.dumps(per, indent=1))
-    summ = {}
-    for src in ("TK", "AS", "AS2"):
-        v = [x for cs, x in per.items() if x["source"] == src and (src == "TK" or cs.endswith("_0"))]
-        if v: summ[src] = {"n": len(v), "dice_median": float(np.median([x["dice"] for x in v])), "abs_vol_err_median": float(np.median([abs(x["rel_vol_err"]) for x in v]))}
-    (out / "summary.json").write_text(json.dumps(summ, indent=1)); print("summary", summ, flush=True)
+    for fold in cfg.get("folds", [fold]):
+        fo_out = out / f"fold_{fold}"; fo_out.mkdir(exist_ok=True)
+        # 4) train
+        sh(["nnUNetv2_train", str(did), conf, str(fold), "-tr", tr], env)
+        R = W / "res" / name / f"{tr}__nnUNetPlans__{conf}"
+        (fo_out / "train_log").mkdir(exist_ok=True)
+        for f in (R / f"fold_{fold}").glob("*"):
+            if f.is_file() and f.suffix in (".txt", ".png", ".json"): shutil.copy(f, fo_out / "train_log" / f.name)
+        for f in ("dataset.json", "plans.json", "dataset_fingerprint.json"):
+            if (R / f).exists(): shutil.copy(R / f, fo_out / f)
+        shutil.copy(R / f"fold_{fold}" / "checkpoint_final.pth", fo_out / "checkpoint_final.pth")
+        # 5) metrics on validation cases, split by source
+        V = R / f"fold_{fold}" / "validation"; per = {}
+        for p in V.glob("*.nii.gz"):
+            cs = p.name[:-7]; ref = nib.load(str(D / "labelsTr" / p.name)).get_fdata() > 0; pr = nib.load(str(p)).get_fdata() > 0
+            inter = int((ref & pr).sum()); per[cs] = {"source": case_sp[cs][0], "species": case_sp[cs][1], "dice": round(2 * inter / max(int(ref.sum() + pr.sum()), 1), 4),
+                                                      "rel_vol_err": round((int(pr.sum()) - int(ref.sum())) / max(int(ref.sum()), 1), 4)}
+        (fo_out / "val_per_case.json").write_text(json.dumps(per, indent=1))
+        summ = {}
+        for src in ("TK", "AS", "AS2"):
+            v = [x for cs, x in per.items() if x["source"] == src and (src == "TK" or cs.endswith("_0"))]
+            if v: summ[src] = {"n": len(v), "dice_median": float(np.median([x["dice"] for x in v])), "abs_vol_err_median": float(np.median([abs(x["rel_vol_err"]) for x in v]))}
+        (fo_out / "summary.json").write_text(json.dumps(summ, indent=1)); print("summary", summ, flush=True)
