@@ -24,10 +24,33 @@ def vial_code(v):
 
 
 
+def _resize(a, size):
+    """Trilinear resize of a 3-D array to `size` (GPU if available, else scipy)."""
+    try:
+        import torch
+        dev = "cuda" if torch.cuda.is_available() else "cpu"
+        with torch.no_grad():
+            t = torch.from_numpy(np.ascontiguousarray(a, dtype=np.float32)).to(dev)[None, None]
+            return torch.nn.functional.interpolate(t, size=tuple(int(x) for x in size), mode="trilinear", align_corners=False)[0, 0].cpu().numpy()
+    except ImportError:
+        return ndi.zoom(a.astype(np.float32), [n / o for n, o in zip(size, a.shape)], order=1)
+
+
 def to_iso(img, lab, sp, iso):
-    """Resample image (linear) and label (linear > 0.5) from spacing sp (per axis, um) to isotropic iso um."""
-    f = [s_ / iso for s_ in sp]
-    return ndi.zoom(img, f, order=1), (ndi.zoom(lab.astype(np.float32), f, order=1) > 0.5).astype(np.uint8)
+    """Resample image (trilinear) to isotropic iso um; the label is resampled only inside its bounding box (> 0.5)
+    and placed at the scaled offset. v5b: GPU resampling (v5 used single-threaded scipy zoom, ~40 s/case)."""
+    f = np.array(sp, dtype=np.float64) / iso
+    out_shape = np.maximum(1, np.round(np.array(img.shape) * f).astype(int))
+    im = np.clip(np.round(_resize(img, out_shape)), 0, 255).astype(np.uint8)
+    lb = np.zeros(out_shape, np.uint8)
+    nz = np.nonzero(lab)
+    if len(nz[0]):
+        lo = np.maximum(0, np.array([x.min() for x in nz]) - 2); hi = np.minimum(lab.shape, np.array([x.max() for x in nz]) + 3)
+        crop = lab[lo[0]:hi[0], lo[1]:hi[1], lo[2]:hi[2]]
+        o0 = np.round(lo * f).astype(int); o1 = np.minimum(out_shape, np.round(hi * f).astype(int)); sz = np.maximum(1, o1 - o0)
+        small = _resize(crop, sz) > 0.5
+        lb[o0[0]:o0[0] + sz[0], o0[1]:o0[1] + sz[1], o0[2]:o0[2] + sz[2]] = small[: out_shape[0] - o0[0], : out_shape[1] - o0[1], : out_shape[2] - o0[2]]
+    return im, lb
 
 
 def main(cfg, out):
