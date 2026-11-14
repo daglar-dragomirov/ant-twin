@@ -55,13 +55,37 @@ def main(cfg, out):
             case = f"AS_{i:03d}_{r_}"; case_sp[case] = ("AS", m["species"]); as_cases.append(case)
             nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.eye(4)), D / "imagesTr" / f"{case}_0000.nii.gz")
             nib.save(nib.Nifti1Image(np.ascontiguousarray(lab.transpose(2, 1, 0)), np.eye(4)), D / "labelsTr" / f"{case}.nii.gz")
+    # 2b) self-training round: agent-approved seg masks on finder boxes (boxes_v3 + brain_masks_v1 caches)
+    if cfg.get("extra_reviews"):
+        import pandas as pd
+        sp_tab = pd.read_csv(io.BytesIO(get(f"ant-twin/runs/{cfg['specimens_run']}/outputs/specimens.csv")))
+        def vc(v):
+            q = str(v).split("-"); return "%02d-%02d" % (int(q[0]), int(q[1])) if len(q) == 2 and all(x.isdigit() for x in q) else str(v)
+        name_of = {f"{r.folder}__{vc(r.vial)}": r.name for r in sp_tab.itertuples()}
+        ex_good = []
+        for k in cfg["extra_reviews"]:
+            ex_good += [x["key"] for x in json.loads(get(k)) if x.get("mask") == "good" and x.get("box_on_head") is True]
+        n2 = 0
+        for i, key in enumerate(sorted(set(ex_good))):
+            try:
+                box = np.load(io.BytesIO(get(cfg["boxes_prefix"] + key + ".npz")))["box"]; mk = np.load(io.BytesIO(get(cfg["masks_prefix"] + key + ".npz")))["mask"]
+            except Exception as ex_:
+                print("skip", key, ex_, flush=True); continue
+            s2 = t / max(box.shape[1], box.shape[2])
+            img = ndi.zoom(box, (1, s2, s2), order=1); lab = (ndi.zoom(mk.astype(np.float32), (1, s2, s2), order=1) > 0.5).astype(np.uint8)
+            for r_ in range(cfg.get("dup_extra", 2)):
+                case = f"AT_{i:03d}_{r_}"; case_sp[case] = ("AS2", name_of.get(key, key)); as_cases.append(case)
+                nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.eye(4)), D / "imagesTr" / f"{case}_0000.nii.gz")
+                nib.save(nib.Nifti1Image(np.ascontiguousarray(lab.transpose(2, 1, 0)), np.eye(4)), D / "labelsTr" / f"{case}.nii.gz")
+            n2 += 1
+        print(f"self-training cases from {n2} agent-approved specimens", flush=True)
     print(f"TK cases {sum(v[0] == 'TK' for v in case_sp.values())}, AntScan cases {len(as_cases)} from {len(good)} specimens", flush=True)
     (D / "dataset.json").write_text(json.dumps({"channel_names": {"0": "CT"}, "labels": {"background": 0, "brain": 1}, "numTraining": len(case_sp),
                                                 "file_ending": ".nii.gz", "description": "TK 2023 + auto-reviewed AntScan brains"}, indent=1))
     (out / "cases.json").write_text(json.dumps({k: list(v) for k, v in case_sp.items()}, indent=1))
     # 3) species-level folds: TK keeps its folds; AntScan species get random folds; duplicates stay together
-    k = cfg["n_folds"]; as_sp = sorted({v[1] for v in case_sp.values() if v[0] == "AS"}); random.Random(cfg["seed"]).shuffle(as_sp)
-    fo = {("TK", s): f for s, f in tk_fold.items()}; fo.update({("AS", s): j % k for j, s in enumerate(as_sp)})
+    k = cfg["n_folds"]; as_sp = sorted({v[1] for v in case_sp.values() if v[0] in ("AS", "AS2")}); random.Random(cfg["seed"]).shuffle(as_sp)
+    fo = {("TK", s): f for s, f in tk_fold.items()}; fo.update({("AS", s): j % k for j, s in enumerate(as_sp)}); fo.update({("AS2", s): j % k for j, s in enumerate(as_sp)})
     folds = [{"train": sorted(cs for cs, v in case_sp.items() if fo[tuple(v)] != fi), "val": sorted(cs for cs, v in case_sp.items() if fo[tuple(v)] == fi)} for fi in range(k)]
     if not (W / "pre" / name / "nnUNetPlans.json").exists():
         sh(["nnUNetv2_plan_and_preprocess", "-d", str(did), "-c", conf, "--verify_dataset_integrity", "-np", "16"], env)
