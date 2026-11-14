@@ -72,6 +72,7 @@ def main(cfg, out):
             except Exception: pass
         return ks
     keyof = lambda r: f"{r['folder']}__{vial_code(r['vial'])}"
+    TP = json.loads(get(cfg["true_pages_key"])) if cfg.get("true_pages_key") else {}
     skip = done_elsewhere(); recs = [r for r in recs if keyof(r) not in skip]; print(f"to do: {len(recs)}", flush=True)
     (out / "qc").mkdir(exist_ok=True); n_ok = 0; t_all = time.time()
     with open(out / "finder.jsonl", "w", encoding="utf-8") as fo:
@@ -83,6 +84,7 @@ def main(cfg, out):
             try:
                 z = np.load(io.BytesIO(get(cfg.get("cache_prefix", "ant-twin/cache/lowres/") + key + ".npz")))
                 v, nlow, P, H, Wd = z["img"], int(z["n_lowres"]), int(z["pages"]), int(z["H"]), int(z["W"])
+                P_est = P; P = int(TP[key]["pages"]) if key in TP else P  # v8: exact page count (size-based estimate wrong for compressed stacks)
             except Exception as ex:
                 fo.write(json.dumps({**base, "status": "not_cached"}) + "\n"); continue
             vox = float(r["voxel_um"]); f = np.array([P / nlow, H / v.shape[1], Wd / v.shape[2]]); sp1 = vox * f  # um per low-res voxel
@@ -110,7 +112,7 @@ def main(cfg, out):
             new_shape = list(seg.shape)
             del x, logits; torch.cuda.empty_cache()
             lab, n = ndi.label(seg)
-            rec = {**base, "P": P, "H": H, "W": Wd, "nlow": nlow, "lowres_shape": list(v.shape), "crop_offset": off, "plan_shape": new_shape, "n_components": int(n)}
+            rec = {**base, "P": P, "P_est": P_est, "H": H, "W": Wd, "nlow": nlow, "lowres_shape": list(v.shape), "crop_offset": off, "plan_shape": new_shape, "n_components": int(n)}
             if n == 0:
                 rec["status"] = "no_brain"; fo.write(json.dumps(rec) + "\n"); fo.flush(); continue
             sizes = ndi.sum(seg, lab, range(1, n + 1)); order = np.argsort(sizes)[::-1]
