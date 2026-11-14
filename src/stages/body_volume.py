@@ -30,17 +30,19 @@ def segment(v):
     from skimage.morphology import disk
     g = ndi.gaussian_filter(v.astype(np.float32), 1.0)
     t0, t1 = (float(x) for x in threshold_multiotsu(g[::2, ::4, ::4], classes=3))  # dark outside | medium | cuticle-bright
-    se = disk(3); body = np.zeros(g.shape, bool)
+    se = disk(3); body = np.zeros(g.shape, bool); guarded = 0
     for z in range(g.shape[0]):
         tube = ndi.binary_fill_holes(g[z] > t0)                                  # tube interior incl. wall
         inner = ndi.binary_erosion(tube, structure=disk(1), iterations=6)        # cut the wall (+ margin)
         sh = (g[z] > t1) & inner                                                 # cuticle inside the tube
         sh = ndi.binary_closing(sh, structure=se)                                # bridge small gaps in the shell
-        body[z] = ndi.binary_fill_holes(sh)
+        f = ndi.binary_fill_holes(sh)
+        if f.sum() > 0.6 * max(inner.sum(), 1): f = sh; guarded += 1             # fill leaked into the tube: keep shell only
+        body[z] = f
     lab, n = ndi.label(body)
-    if n == 0: return body, {"n_comp": 0, "thresholds": [t0, t1]}
+    if n == 0: return body, {"n_comp": 0, "thresholds": [t0, t1], "guarded_slices": guarded}
     sizes = ndi.sum(body, lab, range(1, n + 1)); keep = [i + 1 for i in range(n) if sizes[i] >= 0.03 * sizes.max()]
-    return np.isin(lab, keep), {"n_comp": int(n), "n_kept": len(keep), "thresholds": [round(t0, 2), round(t1, 2)]}
+    return np.isin(lab, keep), {"n_comp": int(n), "n_kept": len(keep), "thresholds": [round(t0, 2), round(t1, 2)], "guarded_slices": guarded, "guarded_frac": round(guarded / g.shape[0], 4)}
 
 
 def main(cfg, out):
