@@ -6,3 +6,4 @@ imagecodecs
 scipy
 pandas
 openpyxl
+matplotlib
