@@ -61,8 +61,11 @@ def main(cfg, out):
                     sz_ = ndi.sum(bright, lab_, range(1, n_ + 1)); keep_ = np.isin(lab_, [i + 1 for i in range(n_) if sz_[i] >= 0.01 * sz_.max()])
                     # drop field-spanning components (tube wall)
                     objs_ = ndi.find_objects(lab_)
+                    border_ = set(np.unique(np.concatenate([lab_[:, 0].ravel(), lab_[:, -1].ravel(), lab_[:, :, 0].ravel(), lab_[:, :, -1].ravel()]))) - {0}
                     for i_, sl_ in enumerate(objs_):
-                        if sl_ is not None and (sl_[1].stop - sl_[1].start) > 0.8 * bright.shape[1] and (sl_[2].stop - sl_[2].start) > 0.8 * bright.shape[2]: keep_[lab_ == i_ + 1] = False
+                        if sl_ is None: continue
+                        spans = (sl_[1].stop - sl_[1].start) > 0.8 * bright.shape[1] and (sl_[2].stop - sl_[2].start) > 0.8 * bright.shape[2]
+                        if spans or (i_ + 1) in border_: keep_[lab_ == i_ + 1] = False  # tube wall / pieces touching the in-plane border
                     if keep_.any():
                         zz_, yy_, xx_ = np.nonzero(keep_); m_ = cfg.get("crop_margin", 12)
                         z0_, y0_, x0_ = max(0, zz_.min() * 2 - m_), max(0, yy_.min() * 2 - m_), max(0, xx_.min() * 2 - m_)
