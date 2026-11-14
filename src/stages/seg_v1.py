@@ -66,24 +66,27 @@ def main(cfg, out):
     if not (W / "pre" / name / "nnUNetPlans.json").exists():
         sh(["nnUNetv2_plan_and_preprocess", "-d", str(did), "-c", conf, "--verify_dataset_integrity", "-np", "16"], env)
     (W / "pre" / name / "splits_final.json").write_text(json.dumps(folds, indent=1)); shutil.copy(W / "pre" / name / "splits_final.json", out / "splits_final.json")
-    # 4) train
-    sh(["nnUNetv2_train", str(did), conf, str(fold), "-tr", tr], env)
-    R = W / "res" / name / f"{tr}__nnUNetPlans__{conf}"
-    (out / "train_log").mkdir(exist_ok=True)
-    for f in (R / f"fold_{fold}").glob("*"):
-        if f.is_file() and f.suffix in (".txt", ".png", ".json"): shutil.copy(f, out / "train_log" / f.name)
-    for f in ("dataset.json", "plans.json", "dataset_fingerprint.json"):
-        if (R / f).exists(): shutil.copy(R / f, out / f)
-    shutil.copy(R / f"fold_{fold}" / "checkpoint_final.pth", out / "checkpoint_final.pth")
-    # 5) metrics on validation cases, split by source
-    V = R / f"fold_{fold}" / "validation"; per = {}
-    for p in V.glob("*.nii.gz"):
-        cs = p.name[:-7]; ref = nib.load(str(D / "labelsTr" / p.name)).get_fdata() > 0; pr = nib.load(str(p)).get_fdata() > 0
-        inter = int((ref & pr).sum()); per[cs] = {"source": case_sp[cs][0], "species": case_sp[cs][1], "dice": round(2 * inter / max(int(ref.sum() + pr.sum()), 1), 4),
-                                                  "rel_vol_err": round((int(pr.sum()) - int(ref.sum())) / max(int(ref.sum()), 1), 4)}
-    (out / "val_per_case.json").write_text(json.dumps(per, indent=1))
-    summ = {}
-    for src in ("TK", "AS"):
-        v = [x for cs, x in per.items() if x["source"] == src and (src == "TK" or cs.endswith("_0"))]
-        if v: summ[src] = {"n": len(v), "dice_median": float(np.median([x["dice"] for x in v])), "abs_vol_err_median": float(np.median([abs(x["rel_vol_err"]) for x in v]))}
-    (out / "summary.json").write_text(json.dumps(summ, indent=1)); print("summary", summ, flush=True)
+    # 4) train + 5) metrics, for each requested fold
+    summ_all = {}
+    for fold in cfg.get("folds", [fold]):
+        fo_dir = out / f"fold_{fold}"; fo_dir.mkdir(exist_ok=True)
+        sh(["nnUNetv2_train", str(did), conf, str(fold), "-tr", tr], env)
+        R = W / "res" / name / f"{tr}__nnUNetPlans__{conf}"
+        (fo_dir / "train_log").mkdir(exist_ok=True)
+        for f in (R / f"fold_{fold}").glob("*"):
+            if f.is_file() and f.suffix in (".txt", ".png", ".json"): shutil.copy(f, fo_dir / "train_log" / f.name)
+        for f in ("dataset.json", "plans.json", "dataset_fingerprint.json"):
+            if (R / f).exists(): shutil.copy(R / f, out / f)
+        shutil.copy(R / f"fold_{fold}" / "checkpoint_final.pth", fo_dir / "checkpoint_final.pth")
+        V = R / f"fold_{fold}" / "validation"; per = {}
+        for p_ in V.glob("*.nii.gz"):
+            cs = p_.name[:-7]; ref = nib.load(str(D / "labelsTr" / p_.name)).get_fdata() > 0; pr = nib.load(str(p_)).get_fdata() > 0
+            inter = int((ref & pr).sum()); per[cs] = {"source": case_sp[cs][0], "species": case_sp[cs][1], "dice": round(2 * inter / max(int(ref.sum() + pr.sum()), 1), 4),
+                                                      "rel_vol_err": round((int(pr.sum()) - int(ref.sum())) / max(int(ref.sum()), 1), 4)}
+        (fo_dir / "val_per_case.json").write_text(json.dumps(per, indent=1))
+        summ = {}
+        for src in ("TK", "AS"):
+            v = [x for cs, x in per.items() if x["source"] == src and (src == "TK" or cs.endswith("_0"))]
+            if v: summ[src] = {"n": len(v), "dice_median": float(np.median([x["dice"] for x in v])), "abs_vol_err_median": float(np.median([abs(x["rel_vol_err"]) for x in v]))}
+        summ_all[str(fold)] = summ; print("fold", fold, "summary", summ, flush=True)
+    (out / "summary.json").write_text(json.dumps(summ_all, indent=1)); print("summary", summ_all, flush=True)
