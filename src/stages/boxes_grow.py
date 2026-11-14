@@ -12,7 +12,11 @@ import io, json, time, tempfile, os, shutil, pathlib, urllib.request, collection
 import numpy as np
 import r2
 import bigtiff_range as BT
-from stages.lowres_cache import vial_code
+
+def vial_code(v):
+    p = str(v).split("-")
+    return "%02d-%02d" % (int(p[0]), int(p[1])) if len(p) == 2 and all(x.isdigit() for x in p) else str(v)
+
 
 UA = {"User-Agent": "dsc-biology-research/0.1 (academic, non-commercial)"}
 
