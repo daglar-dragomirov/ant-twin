@@ -53,6 +53,7 @@ def main(cfg, out):
     s1 = pd.read_excel(io.BytesIO(get(cfg["owners_s1_key"])))
     s1b = dict(zip(s1.specimen_code.astype(str), s1.body_volume))
     have = set(r2.list_keys(c, r2.BUCKET, cfg["cache_prefix"])); (out / "qc").mkdir(exist_ok=True)
+    tp = json.loads(get(cfg["true_pages_key"]))  # exact page counts (v8: size-based estimate is wrong for compressed stacks)
 
     def one(ir):
         i, r = ir; key = f"{r['folder']}__{vial_code(r['vial'])}"; k = cfg["cache_prefix"] + key + ".npz"
@@ -61,7 +62,9 @@ def main(cfg, out):
         if k not in have: rec["status"] = "not_cached"; return rec
         try:
             z = np.load(io.BytesIO(get(k))); v = z["img"]; vox = float(z["voxel_um"])
-            sp = (vox * int(z["pages"]) / int(z["n_lowres"]), vox * int(z["H"]) / v.shape[1], vox * int(z["W"]) / v.shape[2])
+            if key not in tp: rec["status"] = "no_true_pages"; return rec
+            P = int(tp[key]["pages"]); rec["pages_true"], rec["pages_est"] = P, int(z["pages"])
+            sp = (vox * P / int(z["n_lowres"]), vox * int(z["H"]) / v.shape[1], vox * int(z["W"]) / v.shape[2])
             m, info = segment(v); vol = float(m.sum() * sp[0] * sp[1] * sp[2])
             rec.update(status="ok", body_um3=vol, spacing_um=[round(x, 3) for x in sp], **info)
             if rec["s1_body_um3"]: rec["ratio_to_s1"] = round(vol / rec["s1_body_um3"], 4)
