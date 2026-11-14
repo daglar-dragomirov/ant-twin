@@ -59,6 +59,10 @@ def main(cfg, out):
     d = pd.read_csv(io.BytesIO(get(f"ant-twin/runs/{cfg['specimens_run']}/outputs/specimens.csv")))
     d = d[(d.caste == "worker") & d.colony_any.notna() & d.url_full.notna()]
     recs = d.to_dict("records"); si, sn = cfg.get("shard", [0, 1]); recs = recs[si::sn]
+    vf = cfg.get("voxel_filter")  # {"mode": "only"|"exclude", "voxels": [6.11]}: split slow (upsampled) scans to another pod
+    if vf:
+        isv = lambda r: any(abs(float(r["voxel_um"]) - v) < 0.01 for v in vf["voxels"])
+        recs = [r for r in recs if (isv(r) if vf["mode"] == "only" else not isv(r))]
     def done_elsewhere():
         ks = set()
         for run in cfg.get("skip_runs", []):
