@@ -41,12 +41,16 @@ def main(cfg, out):
     def prep(i_r):
         i, r = i_r; key = f"{r['folder']}__{vial_code(r['vial'])}"
         try:
-            v, nlow = lowres_stack(r["url_lowres_slice0"].replace("slice_0000.png", "slice_%04d.png"))
-            if v is None: return key, r, None, {"status": "no_lowres"}
-            info = BT.layout(r["url_full"]); size, P = BT.n_pages(r["url_full"], info)
-            vox = float(r["voxel_um"]); fz, fy, fx = P / nlow, info["H"] / v.shape[1], info["W"] / v.shape[2]
+            try:  # R2 low-res cache first (lowres_cache node); the KIT server only as a fallback
+                z = np.load(io.BytesIO(c.get_object(Bucket=r2.BUCKET, Key=cfg.get("cache_prefix", "ant-twin/cache/lowres/") + key + ".npz")["Body"].read()))
+                v, nlow, P, H_, W_ = z["img"], int(z["n_lowres"]), int(z["pages"]), int(z["H"]), int(z["W"])
+            except Exception:
+                v, nlow = lowres_stack(r["url_lowres_slice0"].replace("slice_0000.png", "slice_%04d.png"))
+                if v is None: return key, r, None, {"status": "no_lowres"}
+                info = BT.layout(r["url_full"]); size, P = BT.n_pages(r["url_full"], info); H_, W_ = info["H"], info["W"]
+            vox = float(r["voxel_um"]); fz, fy, fx = P / nlow, H_ / v.shape[1], W_ / v.shape[2]
             sp = (vox * fz * ds, vox * fy * ds, vox * fx * ds); img = v[::ds, ::ds, ::ds]
-            geo = {"P": P, "H": info["H"], "W": info["W"], "nlow": nlow, "lowres_shape": list(v.shape), "f": [fz, fy, fx], "spacing_um": sp}
+            geo = {"P": P, "H": H_, "W": W_, "nlow": nlow, "lowres_shape": list(v.shape), "f": [fz, fy, fx], "spacing_um": sp}
             return key, r, img, geo
         except Exception as ex:
             return key, r, None, {"status": "error", "error": repr(ex)[:200]}
