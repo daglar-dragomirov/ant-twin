@@ -8,3 +8,4 @@ pandas
 openpyxl
 nibabel
 nnunetv2
+scikit-image

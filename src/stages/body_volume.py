@@ -26,22 +26,20 @@ def otsu(x):
 
 
 def segment(v):
+    from skimage.filters import threshold_multiotsu
     g = ndi.gaussian_filter(v.astype(np.float32), 1.0)
-    t = otsu(g[::2, ::4, ::4]); m = g > t
-    m = ndi.binary_closing(m, iterations=2)
-    m = np.stack([ndi.binary_fill_holes(s) for s in m])
+    t = float(threshold_multiotsu(g[::2, ::4, ::4], classes=3)[-1])  # top class = cuticle-bright; medium/tube below
+    m = ndi.binary_closing(g > t, iterations=3)
+    m = np.stack([ndi.binary_fill_holes(s) for s in m])  # cuticle shell -> filled body section
     lab, n = ndi.label(m)
-    if n == 0: return m, {"n_comp": 0}
-    sizes = ndi.sum(m, lab, range(1, n + 1)); order = np.argsort(sizes)[::-1][:5]; best = None
-    for i in order:
-        comp = lab == (i + 1); zz = np.nonzero(comp.any((1, 2)))[0]
-        sol = []  # per-slice solidity: component area / bounding-box area (a tube ring scores low)
-        for z in zz[:: max(1, len(zz) // 20)]:
-            ys, xs = np.nonzero(comp[z]); bb = (np.ptp(ys) + 1) * (np.ptp(xs) + 1); sol.append(len(ys) / bb)
-        s = float(np.mean(sol)) if sol else 0
-        if s > 0.25 and sizes[i] > 0.05 * sizes.max(): best = (comp, s, int(sizes[i])); break
-    if best is None: return lab == (order[0] + 1), {"n_comp": int(n), "solidity": None, "fallback": True}
-    return best[0], {"n_comp": int(n), "solidity": round(best[1], 3), "threshold": float(t)}
+    if n == 0: return m, {"n_comp": 0, "threshold": t}
+    border = set(np.unique(np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, 0].ravel(), lab[:, -1].ravel(),
+                                           lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))) - {0}
+    sizes = ndi.sum(m, lab, range(1, n + 1)); keep_ids = [i + 1 for i in range(n) if (i + 1) not in border]
+    if not keep_ids: return np.zeros_like(m), {"n_comp": int(n), "threshold": t, "all_touch_border": True}
+    big = max(sizes[i - 1] for i in keep_ids); keep = [i for i in keep_ids if sizes[i - 1] >= 0.03 * big]
+    body = np.isin(lab, keep)
+    return body, {"n_comp": int(n), "n_kept": len(keep), "n_border": len(border), "threshold": t}
 
 
 def main(cfg, out):
