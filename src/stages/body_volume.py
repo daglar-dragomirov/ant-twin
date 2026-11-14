@@ -27,20 +27,20 @@ def otsu(x):
 
 def segment(v):
     from skimage.filters import threshold_multiotsu
+    from skimage.morphology import disk
     g = ndi.gaussian_filter(v.astype(np.float32), 1.0)
-    t = float(threshold_multiotsu(g[::2, ::4, ::4], classes=3)[-1])  # top class = cuticle-bright; medium/tube below
-    m = ndi.binary_closing(g > t, iterations=3)
-    m = np.stack([ndi.binary_fill_holes(s) for s in m])  # cuticle shell -> filled body section
-    lab, n = ndi.label(m)
-    if n == 0: return m, {"n_comp": 0, "threshold": t}
-    border = set(np.unique(np.concatenate([lab[:, 0].ravel(), lab[:, -1].ravel(), lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))) - {0}  # in-plane only
-    sizes = ndi.sum(m, lab, range(1, n + 1)); objs = ndi.find_objects(lab)
-    tube = {i + 1 for i, sl in enumerate(objs) if sl is not None and (sl[1].stop - sl[1].start) > 0.8 * m.shape[1] and (sl[2].stop - sl[2].start) > 0.8 * m.shape[2]}
-    keep_ids = [i + 1 for i in range(n) if (i + 1) not in border and (i + 1) not in tube]
-    if not keep_ids: return np.zeros_like(m), {"n_comp": int(n), "threshold": t, "all_touch_border": True}
-    big = max(sizes[i - 1] for i in keep_ids); keep = [i for i in keep_ids if sizes[i - 1] >= 0.03 * big]
-    body = np.isin(lab, keep)
-    return body, {"n_comp": int(n), "n_kept": len(keep), "n_border": len(border), "threshold": t}
+    t0, t1 = (float(x) for x in threshold_multiotsu(g[::2, ::4, ::4], classes=3))  # dark outside | medium | cuticle-bright
+    se = disk(3); body = np.zeros(g.shape, bool)
+    for z in range(g.shape[0]):
+        tube = ndi.binary_fill_holes(g[z] > t0)                                  # tube interior incl. wall
+        inner = ndi.binary_erosion(tube, structure=disk(1), iterations=6)        # cut the wall (+ margin)
+        sh = (g[z] > t1) & inner                                                 # cuticle inside the tube
+        sh = ndi.binary_closing(sh, structure=se)                                # bridge small gaps in the shell
+        body[z] = ndi.binary_fill_holes(sh)
+    lab, n = ndi.label(body)
+    if n == 0: return body, {"n_comp": 0, "thresholds": [t0, t1]}
+    sizes = ndi.sum(body, lab, range(1, n + 1)); keep = [i + 1 for i in range(n) if sizes[i] >= 0.03 * sizes.max()]
+    return np.isin(lab, keep), {"n_comp": int(n), "n_kept": len(keep), "thresholds": [round(t0, 2), round(t1, 2)]}
 
 
 def main(cfg, out):
