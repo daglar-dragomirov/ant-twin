@@ -87,18 +87,22 @@ def main(cfg, out):
                 fo.write(json.dumps({**base, "status": "not_cached"}) + "\n"); continue
             vox = float(r["voxel_um"]); f = np.array([P / nlow, H / v.shape[1], Wd / v.shape[2]]); sp1 = vox * f  # um per low-res voxel
             vc, off = crop_to_specimen(v, cfg.get("crop_margin", 40))
-            x = torch.from_numpy(np.ascontiguousarray(vc.transpose(tf)).astype(np.float32)).to(dev)
-            x = ((x.clamp(lo_i, hi_i) - mu_i) / sd_i)[None, None]
             vt, sp1t = np.array(vc.shape)[tf], sp1[tf]
             new_shape_t = [max(8, int(round(s_ * a / b_))) for s_, a, b_ in zip(vt, sp1t, tsp_t)]
+            huge = int(np.prod(new_shape_t)) > cfg.get("huge_voxels", 2e8)  # very large plan-space volume: resample + accumulate on CPU
+            x = torch.from_numpy(np.ascontiguousarray(vc.transpose(tf)).astype(np.float32))
+            if not huge: x = x.to(dev)
+            x = ((x.clamp(lo_i, hi_i) - mu_i) / sd_i)[None, None]
             with torch.no_grad():
                 x = F.interpolate(x, size=new_shape_t, mode="trilinear", align_corners=False)[0]
+                if huge: pred.perform_everything_on_device = False; base["cpu_path"] = True
                 try:
                     logits = pred.predict_sliding_window_return_logits(x)
                 except torch.OutOfMemoryError:  # very large (upsampled) volume: accumulate logits on the CPU instead
                     torch.cuda.empty_cache(); pred.perform_everything_on_device = False
                     x = x.to("cpu"); logits = pred.predict_sliding_window_return_logits(x)
                     pred.perform_everything_on_device = True; base["oom_fallback"] = True
+                pred.perform_everything_on_device = True
                 seg = logits.argmax(0).to("cpu").numpy().astype(np.uint8).transpose(tb)
             new_shape = list(seg.shape)
             del x, logits; torch.cuda.empty_cache()
