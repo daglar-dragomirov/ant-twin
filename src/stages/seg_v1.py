@@ -107,7 +107,7 @@ def main(cfg, out):
                                                   "rel_vol_err": round((int(pr.sum()) - int(ref.sum())) / max(int(ref.sum()), 1), 4)}
     (out / "val_per_case.json").write_text(json.dumps(per, indent=1))
     summ = {}
-    for src in ("TK", "AS"):
+    for src in ("TK", "AS", "AS2"):
         v = [x for cs, x in per.items() if x["source"] == src and (src == "TK" or cs.endswith("_0"))]
         if v: summ[src] = {"n": len(v), "dice_median": float(np.median([x["dice"] for x in v])), "abs_vol_err_median": float(np.median([abs(x["rel_vol_err"]) for x in v]))}
     (out / "summary.json").write_text(json.dumps(summ, indent=1)); print("summary", summ, flush=True)
