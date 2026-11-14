@@ -23,6 +23,13 @@ def vial_code(v):
     return "%02d-%02d" % (int(p[0]), int(p[1])) if len(p) == 2 and all(x.isdigit() for x in p) else str(v)
 
 
+
+def to_iso(img, lab, sp, iso):
+    """Resample image (linear) and label (linear > 0.5) from spacing sp (per axis, um) to isotropic iso um."""
+    f = [s_ / iso for s_ in sp]
+    return ndi.zoom(img, f, order=1), (ndi.zoom(lab.astype(np.float32), f, order=1) > 0.5).astype(np.uint8)
+
+
 def main(cfg, out):
     import nibabel as nib, pandas as pd
     c = r2.client(); get = lambda k: c.get_object(Bucket=r2.BUCKET, Key=k)["Body"].read()
@@ -47,6 +54,11 @@ def main(cfg, out):
         for sub, suf in (("imagesTr", "_0000.nii.gz"), ("labelsTr", ".nii.gz")):
             src = op + f"nnUNet_raw/Dataset{cfg['old_dataset_id']}_{cfg['old_dataset_name']}/{sub}/{r['case']}{suf}"
             (D / sub / f"{r['case']}{suf}").write_bytes(get(src))
+        if cfg.get("iso_um"):
+            fi, fl = D / "imagesTr" / f"{r['case']}_0000.nii.gz", D / "labelsTr" / f"{r['case']}.nii.gz"
+            ni, nl = nib.load(str(fi)), nib.load(str(fl)); spx = [abs(float(a)) for a in np.diag(ni.affine)[:3]]
+            a, b = to_iso(np.asarray(ni.dataobj), np.asarray(nl.dataobj), spx, cfg["iso_um"]); af = np.diag([cfg["iso_um"]] * 3 + [1.0])
+            nib.save(nib.Nifti1Image(np.ascontiguousarray(a), af), fi); nib.save(nib.Nifti1Image(np.ascontiguousarray(b), af), fl)
         cases[r["case"]] = r["species"]; old_keys.add(r["key"])
     print(f"copied {len(cases)} old cases; dropped {len(dropped_old)} with a wrong page count", flush=True)
     (out / "dropped_old.json").write_text(json.dumps(dropped_old, indent=1))
@@ -87,9 +99,10 @@ def main(cfg, out):
         sz = [min(small.shape[0], v.shape[0] - tz0), min(small.shape[1], v.shape[1] - ty0), min(small.shape[2], v.shape[2] - tx0)]
         if min(sz) <= 0: recs.append({"key": key, "status": "out_of_stack"}); continue
         lab[tz0: tz0 + sz[0], ty0: ty0 + sz[1], tx0: tx0 + sz[2]] = small[: sz[0], : sz[1], : sz[2]]
-        img, lab = v[::ds, ::ds, ::ds], lab[::ds, ::ds, ::ds]
+        if cfg.get("iso_um"): img, lab = to_iso(v, lab, list(vox * f), cfg["iso_um"])  # v5: isotropic, no nnU-Net resampling
+        else: img, lab = v[::ds, ::ds, ::ds], lab[::ds, ::ds, ::ds]
         if lab.sum() == 0: recs.append({"key": key, "status": "empty_label"}); continue
-        sp = (vox * f[0] * ds, vox * f[1] * ds, vox * f[2] * ds); case = f"LR2_{i:04d}"; aff = np.diag([sp[2], sp[1], sp[0], 1.0])
+        sp = (cfg["iso_um"],) * 3 if cfg.get("iso_um") else (vox * f[0] * ds, vox * f[1] * ds, vox * f[2] * ds); case = f"LR2_{i:04d}"; aff = np.diag([sp[2], sp[1], sp[0], 1.0])
         nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), aff), D / "imagesTr" / f"{case}_0000.nii.gz")
         nib.save(nib.Nifti1Image(np.ascontiguousarray(lab.transpose(2, 1, 0)), aff), D / "labelsTr" / f"{case}.nii.gz")
         cases[case] = species_of.get(lk, lk)
