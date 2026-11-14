@@ -35,7 +35,9 @@ def segment(v):
     if n == 0: return m, {"n_comp": 0, "threshold": t}
     border = set(np.unique(np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, 0].ravel(), lab[:, -1].ravel(),
                                            lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))) - {0}
-    sizes = ndi.sum(m, lab, range(1, n + 1)); keep_ids = [i + 1 for i in range(n) if (i + 1) not in border]
+    sizes = ndi.sum(m, lab, range(1, n + 1)); objs = ndi.find_objects(lab)
+    tube = {i + 1 for i, sl in enumerate(objs) if sl is not None and (sl[1].stop - sl[1].start) > 0.8 * m.shape[1] and (sl[2].stop - sl[2].start) > 0.8 * m.shape[2]}
+    keep_ids = [i + 1 for i in range(n) if (i + 1) not in border and (i + 1) not in tube]
     if not keep_ids: return np.zeros_like(m), {"n_comp": int(n), "threshold": t, "all_touch_border": True}
     big = max(sizes[i - 1] for i in keep_ids); keep = [i for i in keep_ids if sizes[i - 1] >= 0.03 * big]
     body = np.isin(lab, keep)
