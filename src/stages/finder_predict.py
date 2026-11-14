@@ -35,6 +35,7 @@ def main(cfg, out):
     d = d[(d.caste == "worker") & d.url_full.notna() & d.url_lowres_slice0.notna()]
     if cfg.get("only_workers_with_colony", True): d = d[d.colony_any.notna()]
     recs = d.to_dict("records")[: cfg.get("max_specimens", 100000)]
+    si, sn = cfg.get("shard", [0, 1]); recs = recs[si::sn]  # shard i of n
     print(f"specimens: {len(recs)}", flush=True)
     ds, B = int(cfg.get("ds", 2)), int(cfg.get("batch", 16)); (out / "qc").mkdir(exist_ok=True)
 
@@ -67,7 +68,7 @@ def main(cfg, out):
                     fo.write(json.dumps({"key": key, "species": r["name"], **geo}) + "\n"); continue
                 cid = f"F_{b0 + j:04d}"; todo[cid] = (key, r, img, geo); sp = geo["spacing_um"]
                 nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.diag([sp[2], sp[1], sp[0], 1.0])), I / f"{cid}_0000.nii.gz")
-            if todo: sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", str(fold), "-tr", tr, "--disable_progress_bar"], env)
+            if todo: sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", str(fold), "-tr", tr, "--disable_progress_bar"] + (["--disable_tta"] if cfg.get("disable_tta", True) else []), env)
             for cid, (key, r, img, geo) in todo.items():
                 p = nib.load(str(O / f"{cid}.nii.gz")).get_fdata().astype(np.uint8).transpose(2, 1, 0)
                 lab, n = ndi.label(p); rec = {"key": key, "species": r["name"], "species_key": r["species_key"], "subfamily": r["subfamily"],
