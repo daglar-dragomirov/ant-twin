@@ -37,7 +37,7 @@ def segment(v):
         comp = lab == (i + 1); zz = np.nonzero(comp.any((1, 2)))[0]
         sol = []  # per-slice solidity: component area / bounding-box area (a tube ring scores low)
         for z in zz[:: max(1, len(zz) // 20)]:
-            ys, xs = np.nonzero(comp[z]); bb = (ys.ptp() + 1) * (xs.ptp() + 1); sol.append(len(ys) / bb)
+            ys, xs = np.nonzero(comp[z]); bb = (np.ptp(ys) + 1) * (np.ptp(xs) + 1); sol.append(len(ys) / bb)
         s = float(np.mean(sol)) if sol else 0
         if s > 0.25 and sizes[i] > 0.05 * sizes.max(): best = (comp, s, int(sizes[i])); break
     if best is None: return lab == (order[0] + 1), {"n_comp": int(n), "solidity": None, "fallback": True}
