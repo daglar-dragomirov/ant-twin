@@ -16,8 +16,15 @@ UA = {"User-Agent": "dsc-biology-research/0.1 (academic, non-commercial)"}
 
 def main(cfg, out):
     c = r2.client(); pre = cfg.get("prefix", "ant-twin/cache/boxes_v3/")
-    rows = [json.loads(l) for l in c.get_object(Bucket=r2.BUCKET, Key=f"ant-twin/runs/{cfg['finder_run']}/outputs/finder.jsonl")["Body"].read().decode().splitlines() if l.strip()]
-    rows = [r for r in rows if r.get("status") == "ok"]
+    runs = cfg.get("finder_runs") or [cfg["finder_run"]]; seen = {}  # several finder runs (e.g. two pods from both ends) merged by key
+    for run in runs:
+        try: txt = c.get_object(Bucket=r2.BUCKET, Key=f"ant-twin/runs/{run}/outputs/finder.jsonl")["Body"].read().decode()
+        except Exception as ex: print("no finder output yet for", run, ex, flush=True); continue
+        for l in txt.splitlines():
+            if l.strip():
+                r = json.loads(l)
+                if r.get("status") == "ok" and r["key"] not in seen: seen[r["key"]] = r
+    rows = list(seen.values())
     have = set(r2.list_keys(c, r2.BUCKET, pre)); print(f"finder ok: {len(rows)}, cached boxes: {len(have)}", flush=True)
 
     def one(r):
