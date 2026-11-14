@@ -72,6 +72,10 @@ def main(cfg, out):
             except Exception: pass
         return ks
     keyof = lambda r: f"{r['folder']}__{vial_code(r['vial'])}"
+    if cfg.get("rescue_from_run"):  # rerun only specimens with a given status in an earlier finder run (e.g. tiny ants, no_brain)
+        bad = {json.loads(l)["key"] for l in get(f"ant-twin/runs/{cfg['rescue_from_run']}/outputs/finder.jsonl").decode().splitlines()
+               if l.strip() and json.loads(l).get("status") == cfg.get("rescue_status", "no_brain")}
+        recs = [r for r in recs if keyof(r) in bad]
     skip = done_elsewhere(); recs = [r for r in recs if keyof(r) not in skip]; print(f"to do: {len(recs)}", flush=True)
     (out / "qc").mkdir(exist_ok=True); n_ok = 0; t_all = time.time()
     with open(out / "finder.jsonl", "w", encoding="utf-8") as fo:
@@ -85,7 +89,7 @@ def main(cfg, out):
                 v, nlow, P, H, Wd = z["img"], int(z["n_lowres"]), int(z["pages"]), int(z["H"]), int(z["W"])
             except Exception as ex:
                 fo.write(json.dumps({**base, "status": "not_cached"}) + "\n"); continue
-            vox = float(r["voxel_um"]); f = np.array([P / nlow, H / v.shape[1], Wd / v.shape[2]]); sp1 = vox * f  # um per low-res voxel
+            vox = float(r["voxel_um"]); f = np.array([P / nlow, H / v.shape[1], Wd / v.shape[2]]); sp1 = vox * f / float(cfg.get("scale_factor", 1.0))  # um per low-res voxel (declared smaller => specimen presented larger)
             vc, off = crop_to_specimen(v, cfg.get("crop_margin", 40))
             x = torch.from_numpy(np.ascontiguousarray(vc.transpose(tf)).astype(np.float32)).to(dev)
             x = ((x.clamp(lo_i, hi_i) - mu_i) / sd_i)[None, None]
