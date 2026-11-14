@@ -33,8 +33,7 @@ def segment(v):
     m = np.stack([ndi.binary_fill_holes(s) for s in m])  # cuticle shell -> filled body section
     lab, n = ndi.label(m)
     if n == 0: return m, {"n_comp": 0, "threshold": t}
-    border = set(np.unique(np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, 0].ravel(), lab[:, -1].ravel(),
-                                           lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))) - {0}
+    border = set(np.unique(np.concatenate([lab[:, 0].ravel(), lab[:, -1].ravel(), lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))) - {0}  # in-plane only
     sizes = ndi.sum(m, lab, range(1, n + 1)); objs = ndi.find_objects(lab)
     tube = {i + 1 for i, sl in enumerate(objs) if sl is not None and (sl[1].stop - sl[1].start) > 0.8 * m.shape[1] and (sl[2].stop - sl[2].start) > 0.8 * m.shape[2]}
     keep_ids = [i + 1 for i in range(n) if (i + 1) not in border and (i + 1) not in tube]
