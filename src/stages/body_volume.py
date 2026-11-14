@@ -25,6 +25,9 @@ def otsu(x):
     sb = np.zeros_like(c); sb[ok] = (mt * w[ok] / wt - mu[ok]) ** 2 * wt / (w[ok] * w1[ok]); return c[np.argmax(sb)]
 
 
+MODE, K_MAD, MIN_DELTA = "adaptive", 6.0, 12.0
+
+
 def segment(v):
     from skimage.filters import threshold_multiotsu
     from skimage.morphology import disk
@@ -34,7 +37,12 @@ def segment(v):
     for z in range(g.shape[0]):
         tube = ndi.binary_fill_holes(g[z] > t0)                                  # tube interior incl. wall
         inner = ndi.binary_erosion(tube, structure=disk(1), iterations=6)        # cut the wall (+ margin)
-        sh = (g[z] > t1) & inner                                                 # cuticle inside the tube
+        if MODE == "adaptive" and inner.any():                                   # per-slice threshold: medium median + k*MAD
+            med = float(np.median(g[z][inner])); mad = float(np.median(np.abs(g[z][inner] - med))) + 1e-3
+            tz = med + max(K_MAD * 1.4826 * mad, MIN_DELTA)
+        else:
+            tz = t1
+        sh = (g[z] > tz) & inner                                                 # cuticle inside the tube
         sh = ndi.binary_closing(sh, structure=se)                                # bridge small gaps in the shell
         f = ndi.binary_fill_holes(sh)
         if f.sum() > 0.6 * max(inner.sum(), 1): f = sh; guarded += 1             # fill leaked into the tube: keep shell only
@@ -52,6 +60,8 @@ def main(cfg, out):
     d = d[(d.caste == "worker") & d.colony_any.notna()]
     s1 = pd.read_excel(io.BytesIO(get(cfg["owners_s1_key"])))
     s1b = dict(zip(s1.specimen_code.astype(str), s1.body_volume))
+    global MODE, K_MAD, MIN_DELTA
+    MODE, K_MAD, MIN_DELTA = cfg.get("mode", "adaptive"), float(cfg.get("k_mad", 6.0)), float(cfg.get("min_delta", 12.0))
     have = set(r2.list_keys(c, r2.BUCKET, cfg["cache_prefix"])); (out / "qc").mkdir(exist_ok=True)
 
     def one(ir):
