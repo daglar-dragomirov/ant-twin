@@ -52,22 +52,31 @@ def main(cfg, out):
     (out / "dropped_old.json").write_text(json.dumps(dropped_old, indent=1))
     # (b) agent-approved masks; later review sets override earlier ones for the same key
     chosen = {}
+    unchanged = lambda k: k in tp and tp[k]["pages"] == tp[k]["pages_est"]
     for rv in cfg["reviews"]:
         for f in rv["files"]:
             for x in json.loads(get(f)):
-                if x.get("mask") == "good" and x.get("box_on_head") is True and x.get("brain_fully_in_box") is not False and "@" not in x["key"]:
-                    chosen[x["key"]] = rv["mask_prefix"]
-    chosen = {k: v for k, v in chosen.items() if k not in old_keys}
+                base = x["key"].split("@")[0]
+                if rv.get("unchanged_only") and not unchanged(base): continue  # v4: boxes_v3 reviews hold only where P was right
+                ok = x.get("mask") == "good" and x.get("box_on_head") is True and x.get("brain_fully_in_box") is not False
+                if ok: chosen[x["key"]] = rv["mask_prefix"]
+                elif x["key"] in chosen and rv.get("override_bad", True): chosen.pop(x["key"])  # a later review of the same box wins
+    # one case per specimen: tiny-ant end keys (key@A/@B) map onto the base key's low-res stack
+    by_base = {}
+    for k in sorted(chosen):
+        by_base.setdefault(k.split("@")[0], k)
+    chosen = {k: chosen[k] for b, k in by_base.items() if b not in old_keys}
     print(f"new approved specimens: {len(chosen)}", flush=True)
     ds = int(cfg.get("ds", 2)); recs = []
     for i, (key, mpre) in enumerate(sorted(chosen.items())):
         try:
-            z = np.load(io.BytesIO(get(cfg["cache_prefix"] + key + ".npz"))); mz = np.load(io.BytesIO(get(mpre + key + ".npz")))
+            lk = key.split("@")[0]
+            z = np.load(io.BytesIO(get(cfg["cache_prefix"] + lk + ".npz"))); mz = np.load(io.BytesIO(get(mpre + key + ".npz")))
         except Exception as ex:
             recs.append({"key": key, "status": "missing", "error": repr(ex)[:120]}); continue
         v, nlow, H, W = z["img"], int(z["n_lowres"]), int(z["H"]), int(z["W"]); vox = float(z["voxel_um"])
-        if key not in tp: recs.append({"key": key, "status": "no_true_pages"}); continue
-        P = int(tp[key]["pages"])
+        if lk not in tp: recs.append({"key": key, "status": "no_true_pages"}); continue
+        P = int(tp[lk]["pages"])
         mk, bz = mz["mask"], [int(a) for a in mz["box_zyx"]]
         f = np.array([P / nlow, H / v.shape[1], W / v.shape[2]])
         z0, z1, y0, y1, x0, x1 = bz
@@ -83,7 +92,7 @@ def main(cfg, out):
         sp = (vox * f[0] * ds, vox * f[1] * ds, vox * f[2] * ds); case = f"LR2_{i:04d}"; aff = np.diag([sp[2], sp[1], sp[0], 1.0])
         nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), aff), D / "imagesTr" / f"{case}_0000.nii.gz")
         nib.save(nib.Nifti1Image(np.ascontiguousarray(lab.transpose(2, 1, 0)), aff), D / "labelsTr" / f"{case}.nii.gz")
-        cases[case] = species_of.get(key, key)
+        cases[case] = species_of.get(lk, lk)
         recs.append({"key": key, "case": case, "species": cases[case], "status": "ok", "label_vox": int(lab.sum()), "spacing_um": [round(s, 3) for s in sp], "mask_source": mpre, "pages_true": P, "pages_est": int(z["pages"])})
         if i % 15 == 0:
             zz = np.nonzero(lab.any((1, 2)))[0]; k = int(zz[len(zz) // 2]); sl = slice(max(0, k - 40), min(img.shape[0], k + 40))
