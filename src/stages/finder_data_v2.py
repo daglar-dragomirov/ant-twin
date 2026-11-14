@@ -53,6 +53,36 @@ def to_iso(img, lab, sp, iso):
     return im, lb
 
 
+def specimen_bbox(v, margin):
+    """Specimen bounding box with the finder's crop_to_specimen rule (3-class Otsu, drop components touching the
+    in-plane border or spanning >80% of the field = tube wall). Returns [z0,z1,y0,y1,x0,x1] or None."""
+    from skimage.filters import threshold_multiotsu
+    t_hi = float(threshold_multiotsu(v[::4, ::4, ::4].astype(np.float32), classes=3)[-1])
+    b = ndi.binary_opening(v[::2, ::2, ::2] > t_hi, iterations=1); lab, n = ndi.label(b)
+    if n == 0: return None
+    sz = ndi.sum(b, lab, range(1, n + 1)); keep = np.isin(lab, [i + 1 for i in range(n) if sz[i] >= 0.01 * sz.max()])
+    border = set(np.unique(np.concatenate([lab[:, 0].ravel(), lab[:, -1].ravel(), lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))) - {0}
+    for i, sl in enumerate(ndi.find_objects(lab)):
+        if sl is None: continue
+        if ((sl[1].stop - sl[1].start) > 0.8 * b.shape[1] and (sl[2].stop - sl[2].start) > 0.8 * b.shape[2]) or (i + 1) in border: keep[lab == i + 1] = False
+    if not keep.any(): return None
+    zz, yy, xx = np.nonzero(keep)
+    return [max(0, zz.min() * 2 - margin), min(v.shape[0], zz.max() * 2 + 2 + margin), max(0, yy.min() * 2 - margin), min(v.shape[1], yy.max() * 2 + 2 + margin),
+            max(0, xx.min() * 2 - margin), min(v.shape[2], xx.max() * 2 + 2 + margin)]
+
+
+def crop_keep_label(img, lab, margin):
+    """v5c: crop to the specimen, always keeping the labelled region (plus margin) inside."""
+    bb = specimen_bbox(img, margin)
+    if bb is None: return img, lab, [0, img.shape[0], 0, img.shape[1], 0, img.shape[2]]
+    nz = np.nonzero(lab)
+    if len(nz[0]):
+        for a in range(3):
+            bb[2 * a] = min(bb[2 * a], max(0, int(nz[a].min()) - margin)); bb[2 * a + 1] = max(bb[2 * a + 1], min(img.shape[a], int(nz[a].max()) + 1 + margin))
+    z0, z1, y0, y1, x0, x1 = [int(x) for x in bb]
+    return img[z0:z1, y0:y1, x0:x1], lab[z0:z1, y0:y1, x0:x1], [z0, z1, y0, y1, x0, x1]
+
+
 def main(cfg, out):
     import nibabel as nib, pandas as pd
     c = r2.client(); get = lambda k: c.get_object(Bucket=r2.BUCKET, Key=k)["Body"].read()
@@ -81,6 +111,7 @@ def main(cfg, out):
             fi, fl = D / "imagesTr" / f"{r['case']}_0000.nii.gz", D / "labelsTr" / f"{r['case']}.nii.gz"
             ni, nl = nib.load(str(fi)), nib.load(str(fl)); spx = [abs(float(a)) for a in np.diag(ni.affine)[:3]]
             a, b = to_iso(np.asarray(ni.dataobj), np.asarray(nl.dataobj), spx, cfg["iso_um"]); af = np.diag([cfg["iso_um"]] * 3 + [1.0])
+            if cfg.get("crop_margin"): a, b, _ = crop_keep_label(a, b, int(cfg["crop_margin"]))
             nib.save(nib.Nifti1Image(np.ascontiguousarray(a), af), fi); nib.save(nib.Nifti1Image(np.ascontiguousarray(b), af), fl)
         cases[r["case"]] = r["species"]; old_keys.add(r["key"])
     print(f"copied {len(cases)} old cases; dropped {len(dropped_old)} with a wrong page count", flush=True)
@@ -122,6 +153,8 @@ def main(cfg, out):
         sz = [min(small.shape[0], v.shape[0] - tz0), min(small.shape[1], v.shape[1] - ty0), min(small.shape[2], v.shape[2] - tx0)]
         if min(sz) <= 0: recs.append({"key": key, "status": "out_of_stack"}); continue
         lab[tz0: tz0 + sz[0], ty0: ty0 + sz[1], tx0: tx0 + sz[2]] = small[: sz[0], : sz[1], : sz[2]]
+        bb = None
+        if cfg.get("crop_margin"): v, lab, bb = crop_keep_label(v, lab, int(cfg["crop_margin"]))  # v5c: specimen crop in low-res space
         if cfg.get("iso_um"): img, lab = to_iso(v, lab, list(vox * f), cfg["iso_um"])  # v5: isotropic, no nnU-Net resampling
         else: img, lab = v[::ds, ::ds, ::ds], lab[::ds, ::ds, ::ds]
         if lab.sum() == 0: recs.append({"key": key, "status": "empty_label"}); continue
@@ -129,7 +162,7 @@ def main(cfg, out):
         nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), aff), D / "imagesTr" / f"{case}_0000.nii.gz")
         nib.save(nib.Nifti1Image(np.ascontiguousarray(lab.transpose(2, 1, 0)), aff), D / "labelsTr" / f"{case}.nii.gz")
         cases[case] = species_of.get(lk, lk)
-        recs.append({"key": key, "case": case, "species": cases[case], "status": "ok", "label_vox": int(lab.sum()), "spacing_um": [round(s, 3) for s in sp], "mask_source": mpre, "pages_true": P, "pages_est": int(z["pages"])})
+        recs.append({"key": key, "case": case, "species": cases[case], "status": "ok", "label_vox": int(lab.sum()), "spacing_um": [round(s, 3) for s in sp], "mask_source": mpre, "pages_true": P, "pages_est": int(z["pages"]), "crop_lowres": bb, "shape": list(img.shape)})
         if i % 15 == 0:
             zz = np.nonzero(lab.any((1, 2)))[0]; k = int(zz[len(zz) // 2]); sl = slice(max(0, k - 40), min(img.shape[0], k + 40))
             qc(img[sl], lab[sl], out / "qc" / f"{case}_{key}.png")
