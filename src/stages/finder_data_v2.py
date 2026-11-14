@@ -1,4 +1,7 @@
-"""Stage finder_data_v2: training set for the final low-res brain finder.
+"""Stage finder_data_v2 (v3 node): training set for the final low-res brain finder.
+
+v3: z factor and spacing use the exact page counts from meta/true_pages.json; gate-1 cases are kept only where the
+boxes-v2 manifest page count equals the true count.
 
 Cases = (a) all cases of an earlier finder dataset run (gate-1, 48), copied as is; (b) every specimen whose full-res brain
 mask (brain_masks_v1/v2 caches) was rated good by the vision agents with the box on the head and the brain fully inside
@@ -28,17 +31,25 @@ def main(cfg, out):
     sp_tab = pd.read_csv(io.BytesIO(get(f"ant-twin/runs/{cfg['specimens_run']}/outputs/specimens.csv")))
     species_of = {f"{r.folder}__{vial_code(r.vial)}": r.name for r in sp_tab.itertuples()}
     cases = {}  # case -> species
+    tp = json.loads(get(cfg["true_pages_key"]))  # exact full-res page counts (size-based estimate is wrong for compressed stacks)
+    man = {}
+    for l in get(f"ant-twin/runs/{cfg['old_boxes_run']}/outputs/manifest.jsonl").decode().splitlines():
+        if l.strip(): m = json.loads(l); man[m.get("key") or m["vial"]] = m
+    dropped_old = []
     # (a) copy the old dataset
     op = f"ant-twin/runs/{cfg['old_dataset_run']}/outputs/"
     old_keys = set()
     for l in get(op + "cases.jsonl").decode().splitlines():
         r = json.loads(l)
         if r.get("status") != "ok" or r.get("label_vox", 0) == 0: continue
+        mp = man.get(r["key"], {}).get("n_pages"); tpk = tp.get(r["key"], {}).get("pages")
+        if mp is None or tpk is None or int(mp) != int(tpk): dropped_old.append({"key": r["key"], "manifest_pages": mp, "true_pages": tpk}); continue
         for sub, suf in (("imagesTr", "_0000.nii.gz"), ("labelsTr", ".nii.gz")):
             src = op + f"nnUNet_raw/Dataset{cfg['old_dataset_id']}_{cfg['old_dataset_name']}/{sub}/{r['case']}{suf}"
             (D / sub / f"{r['case']}{suf}").write_bytes(get(src))
         cases[r["case"]] = r["species"]; old_keys.add(r["key"])
-    print(f"copied {len(cases)} old cases", flush=True)
+    print(f"copied {len(cases)} old cases; dropped {len(dropped_old)} with a wrong page count", flush=True)
+    (out / "dropped_old.json").write_text(json.dumps(dropped_old, indent=1))
     # (b) agent-approved masks; later review sets override earlier ones for the same key
     chosen = {}
     for rv in cfg["reviews"]:
@@ -54,7 +65,9 @@ def main(cfg, out):
             z = np.load(io.BytesIO(get(cfg["cache_prefix"] + key + ".npz"))); mz = np.load(io.BytesIO(get(mpre + key + ".npz")))
         except Exception as ex:
             recs.append({"key": key, "status": "missing", "error": repr(ex)[:120]}); continue
-        v, nlow, P, H, W = z["img"], int(z["n_lowres"]), int(z["pages"]), int(z["H"]), int(z["W"]); vox = float(z["voxel_um"])
+        v, nlow, H, W = z["img"], int(z["n_lowres"]), int(z["H"]), int(z["W"]); vox = float(z["voxel_um"])
+        if key not in tp: recs.append({"key": key, "status": "no_true_pages"}); continue
+        P = int(tp[key]["pages"])
         mk, bz = mz["mask"], [int(a) for a in mz["box_zyx"]]
         f = np.array([P / nlow, H / v.shape[1], W / v.shape[2]])
         z0, z1, y0, y1, x0, x1 = bz
@@ -71,7 +84,7 @@ def main(cfg, out):
         nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), aff), D / "imagesTr" / f"{case}_0000.nii.gz")
         nib.save(nib.Nifti1Image(np.ascontiguousarray(lab.transpose(2, 1, 0)), aff), D / "labelsTr" / f"{case}.nii.gz")
         cases[case] = species_of.get(key, key)
-        recs.append({"key": key, "case": case, "species": cases[case], "status": "ok", "label_vox": int(lab.sum()), "spacing_um": [round(s, 3) for s in sp], "mask_source": mpre})
+        recs.append({"key": key, "case": case, "species": cases[case], "status": "ok", "label_vox": int(lab.sum()), "spacing_um": [round(s, 3) for s in sp], "mask_source": mpre, "pages_true": P, "pages_est": int(z["pages"])})
         if i % 15 == 0:
             zz = np.nonzero(lab.any((1, 2)))[0]; k = int(zz[len(zz) // 2]); sl = slice(max(0, k - 40), min(img.shape[0], k + 40))
             qc(img[sl], lab[sl], out / "qc" / f"{case}_{key}.png")
@@ -83,5 +96,5 @@ def main(cfg, out):
     sps = sorted(set(cases.values())); random.Random(cfg["seed"]).shuffle(sps); k = cfg["n_folds"]; fo_ = {s: j % k for j, s in enumerate(sps)}
     folds = [{"train": sorted(cs for cs, s in cases.items() if fo_[s] != fi), "val": sorted(cs for cs, s in cases.items() if fo_[s] == fi)} for fi in range(k)]
     (out / "splits_final.json").write_text(json.dumps(folds, indent=1))
-    (out / "summary.json").write_text(json.dumps({"cases": len(cases), "new_ok": sum(r["status"] == "ok" for r in recs), "species": len(sps)}, indent=1))
+    (out / "summary.json").write_text(json.dumps({"cases": len(cases), "new_ok": sum(r["status"] == "ok" for r in recs), "old_dropped": len(dropped_old), "species": len(sps)}, indent=1))
     print("cases", len(cases), "species", len(sps), flush=True)
