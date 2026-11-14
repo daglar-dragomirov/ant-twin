@@ -25,6 +25,7 @@ def main(cfg, out):
                 r = json.loads(l)
                 if r.get("status") == "ok" and r["key"] not in seen: seen[r["key"]] = r
     rows = list(seen.values())
+    if cfg.get("reverse"): rows = rows[::-1]  # second pod walks the list from the other end
     have = set(r2.list_keys(c, r2.BUCKET, pre)); print(f"finder ok: {len(rows)}, cached boxes: {len(have)}", flush=True)
 
     def one(r):
