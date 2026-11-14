@@ -89,7 +89,12 @@ def main(cfg, out):
             new_shape_t = [max(8, int(round(s_ * a / b_))) for s_, a, b_ in zip(vt, sp1t, tsp_t)]
             with torch.no_grad():
                 x = F.interpolate(x, size=new_shape_t, mode="trilinear", align_corners=False)[0]
-                logits = pred.predict_sliding_window_return_logits(x)
+                try:
+                    logits = pred.predict_sliding_window_return_logits(x)
+                except torch.OutOfMemoryError:  # very large (upsampled) volume: accumulate logits on the CPU instead
+                    torch.cuda.empty_cache(); pred.perform_everything_on_device = False
+                    x = x.to("cpu"); logits = pred.predict_sliding_window_return_logits(x)
+                    pred.perform_everything_on_device = True; base["oom_fallback"] = True
                 seg = logits.argmax(0).to("cpu").numpy().astype(np.uint8).transpose(tb)
             new_shape = list(seg.shape)
             del x, logits; torch.cuda.empty_cache()
