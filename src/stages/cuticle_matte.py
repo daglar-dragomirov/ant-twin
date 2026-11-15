@@ -15,7 +15,7 @@ Per specimen (as the authors' auto_multiscan_segmentation + extract_data_segment
 Only file I/O differs from the authors' scripts: slices are read from one open TiffFile instead of re-opening the file.
 Fetch: fetch='range' reads only the slices used (tifffile over HTTP range requests; IFD chain + every
 seg_image_gap-th page), fetch='full' downloads the file. Median filter: medfilt_slices (authors 25) / gap samples.
-Config: fetch, block, medfilt_slices, specimens_run, keys_key (optional R2 list of keys), true_pages_key, thresholds (list; authors' scripts use
+Config: exclude_keys_key (R2 list of keys already done), retry_errors, fetch, block, medfilt_slices, specimens_run, keys_key (optional R2 list of keys), true_pages_key, thresholds (list; authors' scripts use
 [110, 255] (single scan) and [145, 255] (multiscan); each threshold gets its own limits and volumes, prefix t<low>_), merge_contour, vial_effort, seg_image_gap, workers, cv_threads, shard, qc_slices, tmp_dir.
 Outputs: cuticle.jsonl, slices/<key>.npz (per-slice raw counts), qc/<key>.jpg, summary.json.
 """
@@ -27,26 +27,39 @@ UA = {"User-Agent": "dsc-biology-research/0.1 (academic, non-commercial)"}
 
 
 class HTTPFile(io.RawIOBase):
-    """Seekable read-only file over HTTP range requests (small reads cached in blocks, big reads exact)."""
+    """Seekable read-only file over HTTP range requests on one keep-alive HTTPS connection
+    (small reads cached in blocks, big reads exact; short or failed reads retried, then raised)."""
     def __init__(self, url, block=1 << 13):
+        import urllib.parse
         self.url, self.pos, self.block, self.cache, self.nreq, self.nbytes = url, 0, block, {}, 0, 0
+        u = urllib.parse.urlsplit(url); self.host, self.path = u.netloc, u.path; self.conn = None
         r = urllib.request.urlopen(urllib.request.Request(url, method="HEAD", headers=UA), timeout=120)
         self.size = int(r.headers["Content-Length"])
+    def _connect(self):
+        import http.client
+        if self.conn is not None:
+            try: self.conn.close()
+            except Exception: pass
+        self.conn = http.client.HTTPSConnection(self.host, timeout=300)
     def seekable(self): return True
     def readable(self): return True
     def tell(self): return self.pos
     def seek(self, off, whence=0):
         self.pos = off if whence == 0 else self.pos + off if whence == 1 else self.size + off; return self.pos
     def _get(self, a, b):
-        for k in range(5):
+        err = None
+        for k in range(6):
             try:
-                req = urllib.request.Request(self.url, headers={**UA, "Range": f"bytes={a}-{b - 1}"})
-                with urllib.request.urlopen(req, timeout=300) as r: d = r.read()
-                if len(d) == b - a: break
-            except Exception:
-                if k == 4: raise
-                time.sleep(5 * (k + 1))
-        self.nreq += 1; self.nbytes += len(d); return d
+                if self.conn is None: self._connect()
+                self.conn.request("GET", self.path, headers={**UA, "Range": f"bytes={a}-{b - 1}", "Connection": "keep-alive"})
+                resp = self.conn.getresponse(); d = resp.read()
+                if resp.status == 206 and len(d) == b - a:
+                    self.nreq += 1; self.nbytes += len(d); return d
+                err = f"status {resp.status} len {len(d)} != {b - a}"
+            except Exception as ex:
+                err = repr(ex)
+            self._connect(); time.sleep(3 * k)
+        raise IOError(f"range {a}-{b} failed: {err}")
     def read(self, n=-1):
         if n is None or n < 0: n = self.size - self.pos
         a, b = self.pos, min(self.size, self.pos + n)
@@ -133,6 +146,13 @@ def qc_jpg(qc, path):
 
 
 def one(args):
+    rec = _one(args)
+    if rec.get("status") == "error" and args[1].get("retry_errors", 1):
+        rec2 = _one(args); rec2["retried"] = True; rec2["first_error"] = rec.get("error"); return rec2
+    return rec
+
+
+def _one(args):
     r, cfg, out, tp = args
     from scipy.ndimage import median_filter
     key = r["key"]; t0 = time.time(); vox = float(r["voxel_um"])
@@ -177,6 +197,8 @@ def main(cfg, out):
     d["key"] = [f"{f}__{vial_code(v)}" for f, v in zip(d.folder, d.vial)]
     if cfg.get("keys_key"):
         want = set(json.loads(get(cfg["keys_key"]))); d = d[d.key.isin(want)]
+    if cfg.get("exclude_keys_key"):
+        done = set(json.loads(get(cfg["exclude_keys_key"]))); d = d[~d.key.isin(done)]
     recs = d.drop_duplicates("key").sort_values("key").to_dict("records")
     si, sn = cfg.get("shard", [0, 1]); recs = recs[si::sn]
     tp = json.loads(get(cfg["true_pages_key"]))
