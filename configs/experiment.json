@@ -1,1 +1,1 @@
-{"stage": "boxes_v3", "finder_runs": ["20261115-030654_finder-v8-true-page-counts-for-z-spacing-and-box_668c59782304"], "workers": 8, "max_box_mb": 2000, "prefix": "ant-twin/cache/boxes_v5/", "reverse": false}
+{"stage": "boxes_v3", "finder_runs": ["20261115-030654_finder-v8-true-page-counts-for-z-spacing-and-box_668c59782304", "20261115-042152_finder-v8b-memory-light-argmax-resume-remaining_668c59782304"], "workers": 12, "max_box_mb": 2000, "prefix": "ant-twin/cache/boxes_v5/", "reverse": true}
