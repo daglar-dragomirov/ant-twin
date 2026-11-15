@@ -45,6 +45,7 @@ def _backend(cfg):
     """GPU (cupy) when available and cfg gpu != false, else CPU; same operations on both."""
     if cfg.get("gpu", True):
         try:
+            os.environ.setdefault("CUPY_COMPILE_WITH_PTX", "1")   # Blackwell (sm_120): JIT from PTX
             import cupy as cp
             from cupyx.scipy import ndimage as cnd
             cp.zeros(1).sum(); return cp, cnd, True
