@@ -204,12 +204,115 @@ def main(cfg, out):
     tp = json.loads(get(cfg["true_pages_key"]))
     (out / "qc").mkdir(exist_ok=True); (out / "slices").mkdir(exist_ok=True)
     print(f"specimens {len(recs)} (shard {si}/{sn})", flush=True)
+    if cfg.get("chunk_slices"): return main_chunked(cfg, out, recs, tp)
     rows = []
     with cf.ProcessPoolExecutor(cfg.get("workers", 8)) as ex, open(out / "cuticle.jsonl", "w", encoding="utf-8") as fo:
         futs = [ex.submit(one, (r, cfg, out, tp)) for r in recs]
         for f in cf.as_completed(futs):
             rec = f.result(); rows.append(rec)
             fo.write(json.dumps(rec) + "\n"); fo.flush(); print(json.dumps(rec)[:300], flush=True)
+    from collections import Counter
+    summ = {"n": len(rows), "status": dict(Counter(r["status"] for r in rows))}
+    (out / "summary.json").write_text(json.dumps(summ, indent=1)); print("summary", summ, flush=True)
+
+
+# ---- chunked mode (v2e): same per-slice chain, slices of one specimen spread over many processes ----------------------
+
+def _open(r, cfg):
+    import tifffile
+    M = _load_matte(cfg.get("cv_threads", 1))
+    hf = HTTPFile(r["url_full"], cfg.get("block", 1 << 13)); tf = tifffile.TiffFile(hf); pages = tf.pages
+    M.open_single_img_tif = lambda file_path, i: pages[i].asarray()
+    M.count_2d_images = lambda file_path: len(pages)
+    M.tqdm = lambda it, **k: it
+    return M, hf, tf, pages
+
+
+def _limits_job(args):
+    r, cfg = args
+    try:
+        M, hf, tf, pages = _open(r, cfg)
+        ths = [list(t) for t in cfg.get("thresholds", [[145, 255]])]; ve = cfg.get("vial_effort", False); mc = bool(cfg.get("merge_contour", False))
+        lim = {tuple(t): M.beginning_and_end("stack", [t, mc, ve, True]) for t in ths}
+        n = len(pages); req = hf.nreq; tf.close(); return r["key"], n, lim, req, None
+    except Exception as ex:
+        return r["key"], None, None, 0, repr(ex)[:300]
+
+
+def _chunk_job(args):
+    r, cfg, idx, lim, qsel = args
+    for attempt in range(2):
+        try:
+            M, hf, tf, pages = _open(r, cfg)
+            ths = [tuple(t) for t in cfg.get("thresholds", [[145, 255]])]; ve = cfg.get("vial_effort", False); mc = bool(cfg.get("merge_contour", False))
+            vals = {}; qc = []; qt = ths[0]
+            for i in idx:
+                image = pages[i].asarray()
+                adj = M.color_image_processing(image) if not ve else M.color_image_processing_2(image)
+                wv = M.remove_vial(adj)
+                for tt in ths:
+                    b0, e0 = lim[tt]
+                    if not (b0 <= i < e0): continue
+                    sg = M.segmente_image(wv, list(tt))
+                    if ve: sg = M.remove_vial_2(sg, ve)
+                    filt = M.filter_segmented_image(sg, mc)
+                    neg = M.fill_contours(filt)
+                    vals[(i, tt)] = (M.get_metrics(neg), M.get_metrics(filt))
+                    if i in qsel and tt == qt: qc.append((i, image, filt, neg))
+            req, nb = hf.nreq, hf.nbytes; tf.close()
+            return r["key"], vals, qc, req, nb, None
+        except Exception as ex:
+            err = repr(ex)[:300]
+    return r["key"], None, None, 0, 0, err
+
+
+def main_chunked(cfg, out, recs, tp):
+    from scipy.ndimage import median_filter
+    t0 = time.time(); ths = [tuple(t) for t in cfg.get("thresholds", [[145, 255]])]; gap = int(cfg.get("seg_image_gap", 1))
+    W = cfg.get("workers", 96); C = int(cfg.get("chunk_slices", 60)); byk = {r["key"]: r for r in recs}
+    rows = []; fo = open(out / "cuticle.jsonl", "w", encoding="utf-8")
+    def emit(rec): rows.append(rec); fo.write(json.dumps(rec) + "\n"); fo.flush(); print(json.dumps(rec)[:300], flush=True)
+    with cf.ProcessPoolExecutor(W) as ex:
+        lims = {}
+        for key, n, lim, req, err in ex.map(_limits_job, [(r, cfg) for r in recs]):
+            r = byk[key]; base = {"key": key, "specimen_code": r.get("specimen_code"), "voxel_um": float(r["voxel_um"])}
+            if err: emit({**base, "status": "error", "error": "limits: " + err}); continue
+            if abs(n - int(tp[key]["pages"])) > int(cfg.get("page_tolerance", 0)): emit({**base, "status": "page_mismatch", "n_pages": n, "pages_true": int(tp[key]["pages"])}); continue
+            lims[key] = (n, lim, req); print("limits", key, n, {f"t{k[0]}": v for k, v in lim.items()}, flush=True)
+        jobs = []; plan = {}
+        for key, (n, lim, req) in lims.items():
+            lo = min(v[0] for v in lim.values()); hi = max(v[1] for v in lim.values()); idx = list(range(lo, hi, gap))
+            qsel = {idx[j] for j in np.linspace(0, len(idx) - 1, cfg.get("qc_slices", 4)).astype(int)} if idx else set()
+            plan[key] = idx
+            for s in range(0, len(idx), C): jobs.append((byk[key], cfg, idx[s:s + C], lim, qsel))
+        print(f"chunks {len(jobs)} for {len(plan)} specimens", flush=True)
+        acc = {k: {"vals": {}, "qc": [], "req": lims[k][2], "nb": 0, "err": None, "left": 0} for k in plan}
+        for j in jobs: acc[j[0]["key"]]["left"] += 1
+        futs = [ex.submit(_chunk_job, j) for j in jobs]
+        for f in cf.as_completed(futs):
+            key, vals, qc, req, nb, err = f.result(); a = acc[key]; a["left"] -= 1
+            if err: a["err"] = err
+            else: a["vals"].update(vals); a["qc"] += qc; a["req"] += req; a["nb"] += nb
+            if a["left"] > 0: continue
+            r = byk[key]; vox = float(r["voxel_um"]); base = {"key": key, "specimen_code": r.get("specimen_code"), "voxel_um": vox}
+            if a["err"]: emit({**base, "status": "error", "error": "chunk: " + a["err"]}); continue
+            n, lim, _ = lims[key]; v3 = vox ** 3 * gap; msz = max(1, int(round(cfg.get("medfilt_slices", 25) / gap))) | 1
+            rec = {**base, "status": "ok", "n_pages": n, "pages_true": int(tp[key]["pages"]), "gap": gap, "mode": "chunked"}; arrs = {}
+            for tt in ths:
+                tag = f"t{tt[0]}"; beg, end = lim[tt]
+                ii = [i for i in plan[key] if beg <= i < end]
+                bv = np.array([a["vals"][(i, tt)][0] for i in ii], float); cv = np.array([a["vals"][(i, tt)][1] for i in ii], float)
+                bvf = median_filter(bv, size=msz) if len(bv) else bv; cvf = median_filter(cv, size=msz) if len(cv) else cv
+                b, c = float(bvf.sum() * v3), float(cvf.sum() * v3)
+                rec.update({f"{tag}_beginning": int(beg), f"{tag}_end": int(end), f"{tag}_n_slices": int(len(bv)),
+                            f"{tag}_body_um3": b, f"{tag}_cuticle_um3": c, f"{tag}_soft_um3": b - c,
+                            f"{tag}_body_um3_raw": float(bv.sum() * v3), f"{tag}_cuticle_um3_raw": float(cv.sum() * v3)})
+                arrs[f"{tag}_body"] = bv.astype(np.int64); arrs[f"{tag}_cuticle"] = cv.astype(np.int64); arrs[f"{tag}_beginning"] = beg
+            np.savez_compressed(out / "slices" / f"{key}.npz", gap=gap, **arrs)
+            q = [x[1:] for x in sorted(a["qc"], key=lambda x: x[0])]
+            if q: qc_jpg(q, out / "qc" / f"{key}.jpg")
+            emit({**rec, "http_requests": a["req"], "http_mb": round(a["nb"] / 1e6, 1), "medfilt_size": msz, "sec": round(time.time() - t0, 1)})
+    fo.close()
     from collections import Counter
     summ = {"n": len(rows), "status": dict(Counter(r["status"] for r in rows))}
     (out / "summary.json").write_text(json.dumps(summ, indent=1)); print("summary", summ, flush=True)
