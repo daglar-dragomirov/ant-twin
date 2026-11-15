@@ -9,4 +9,6 @@ openpyxl
 nibabel
 nnunetv2
 scikit-image
-cupy-cuda13x[ctk]
+opencv-python-headless
+tqdm
+matplotlib
