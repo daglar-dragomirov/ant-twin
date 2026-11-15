@@ -63,8 +63,8 @@
   "r2_min": 0.5
  },
  "sesoi": 0.02,
- "blind": true,
- "run_primary": false,
+ "blind": false,
+ "run_primary": true,
  "override_gate3": false,
  "tree_dir": "C:/projects/dsc-biology/research/ant-twin/work/economo2018/inner/Dryad_archive/15k_all_ant_trees",
  "tree_r2_prefix": "ant-twin/meta/economo2018/15k_all_ant_trees",
