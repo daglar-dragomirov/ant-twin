@@ -74,7 +74,7 @@ class HTTPFile(io.RawIOBase):
             d = b"".join(out)[a - (a // self.block) * self.block:][: b - a]
         self.pos = b; return d
     def readinto(self, buf):
-        d = self.read(len(buf)); buf[: len(d)] = d; return len(d)
+        mv = memoryview(buf).cast("B"); d = self.read(len(mv)); mv[: len(d)] = d; return len(d)   # buf may be a numpy array
 
 
 def vial_code(v):
