@@ -110,7 +110,7 @@ def main(cfg, out):
                     x = x.to("cpu"); logits = pred.predict_sliding_window_return_logits(x)
                     pred.perform_everything_on_device = True; base["oom_fallback"] = True
                 pred.perform_everything_on_device = True
-                seg = logits.argmax(0).to("cpu").numpy().astype(np.uint8).transpose(tb)
+                seg = (logits[1] > logits[0]).to("cpu").numpy().astype(np.uint8).transpose(tb) if logits.shape[0] == 2 else logits.argmax(0).to("cpu").numpy().astype(np.uint8).transpose(tb)  # v8b: no int64 argmax tensor
             new_shape = list(seg.shape)
             del x, logits; torch.cuda.empty_cache()
             lab, n = ndi.label(seg)
