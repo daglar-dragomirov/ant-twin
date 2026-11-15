@@ -84,8 +84,7 @@ def main(cfg, out):
     with cf.ThreadPoolExecutor(cfg.get("workers", 4)) as ex, open(out / "boxes_index.jsonl", "w", encoding="utf-8") as f:
         for recs_ in ex.map(lambda u: group(byurl[u]), urls):
             for rec in recs_:
-                n += 1; f.write(json.dumps(rec) + "
-"); f.flush()
+                n += 1; f.write(json.dumps(rec) + chr(10)); f.flush()
                 if rec["status"] != "cached": print(n, json.dumps(rec), flush=True)
     recs = [json.loads(l) for l in open(out / "boxes_index.jsonl", encoding="utf-8")]
     from collections import Counter
