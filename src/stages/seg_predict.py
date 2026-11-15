@@ -56,7 +56,8 @@ def main(cfg, out):
     else:
         keys = sorted(k[len(pre):-4] for k in r2.list_keys(c, r2.BUCKET, pre))[: cfg.get("max_specimens", 100000)]; bpre_of, ref_of = {k: pre for k in keys}, {}
     done = {k[len(mpre):-4] for k in r2.list_keys(c, r2.BUCKET, mpre)}
-    todo = [k for k in keys if k not in done]; print(f"boxes {len(keys)}, already segmented {len(done)}, to do {len(todo)}", flush=True)
+    todo = [k for k in keys if k not in done]
+    if cfg.get("reverse"): todo = todo[::-1]  # second GPU from the other end; print(f"boxes {len(keys)}, already segmented {len(done)}, to do {len(todo)}", flush=True)
     (out / "qc").mkdir(exist_ok=True); t = cfg["target_px"]; B = cfg.get("batch", 12)
     with open(out / "brains.jsonl", "w", encoding="utf-8") as fo:
         for b0 in range(0, len(todo), B):
