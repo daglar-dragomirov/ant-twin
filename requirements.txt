@@ -9,3 +9,4 @@ openpyxl
 nibabel
 nnunetv2
 scikit-image
+cupy-cuda13x
