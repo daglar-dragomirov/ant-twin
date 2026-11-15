@@ -48,6 +48,14 @@ def main(cfg, out):
         p = W / "raw" / k.split("nnUNet_raw/")[1]
         if not p.exists(): p.parent.mkdir(parents=True, exist_ok=True); c.download_file(r2.BUCKET, k, str(p))
     print(f"dataset files: {len(keys)}", flush=True)
+    if cfg.get("max_case_mvox"):  # drop giant cases (header-only shape check), keep dataset.json consistent
+        import nibabel as nib
+        Dr = W / "raw" / name; dropped = []
+        for f in sorted((Dr / "imagesTr").glob("*_0000.nii.gz")):
+            if np.prod(nib.load(str(f)).shape) / 1e6 > float(cfg["max_case_mvox"]):
+                case = f.name[: -len("_0000.nii.gz")]; dropped.append(case); f.unlink(); (Dr / "labelsTr" / f"{case}.nii.gz").unlink(missing_ok=True)
+        dj = json.loads((Dr / "dataset.json").read_text()); dj["numTraining"] = len(list((Dr / "labelsTr").glob("*.nii.gz"))); (Dr / "dataset.json").write_text(json.dumps(dj, indent=1))
+        (out / "dropped_giant_cases.json").write_text(json.dumps(dropped)); print(f"dropped {len(dropped)} giant cases > {cfg['max_case_mvox']} Mvox: {dropped}", flush=True)
     # 2) plan + preprocess, then install the species-level splits
     if not (W / "pre" / name / "nnUNetPlans.json").exists():
         sh(["nnUNetv2_plan_and_preprocess", "-d", str(did), "-c", conf, "--verify_dataset_integrity", "-np", str(cfg.get("np", 8))], env)
