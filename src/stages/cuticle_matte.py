@@ -13,7 +13,9 @@ Per specimen (as the authors' auto_multiscan_segmentation + extract_data_segment
 4. per-slice series -> scipy median_filter(size=25) -> sum (authors' compile_bv_and_cv, single-scan case);
    volume = voxel count x voxel_um^3 x seg_image_gap.
 Only file I/O differs from the authors' scripts: slices are read from one open TiffFile instead of re-opening the file.
-Config: specimens_run, keys_key (optional R2 list of keys), true_pages_key, thresholds (list; authors' scripts use
+Fetch: fetch='range' reads only the slices used (tifffile over HTTP range requests; IFD chain + every
+seg_image_gap-th page), fetch='full' downloads the file. Median filter: medfilt_slices (authors 25) / gap samples.
+Config: fetch, block, medfilt_slices, specimens_run, keys_key (optional R2 list of keys), true_pages_key, thresholds (list; authors' scripts use
 [110, 255] (single scan) and [145, 255] (multiscan); each threshold gets its own limits and volumes, prefix t<low>_), merge_contour, vial_effort, seg_image_gap, workers, cv_threads, shard, qc_slices, tmp_dir.
 Outputs: cuticle.jsonl, slices/<key>.npz (per-slice raw counts), qc/<key>.jpg, summary.json.
 """
@@ -22,6 +24,44 @@ import numpy as np
 import r2
 
 UA = {"User-Agent": "dsc-biology-research/0.1 (academic, non-commercial)"}
+
+
+class HTTPFile(io.RawIOBase):
+    """Seekable read-only file over HTTP range requests (small reads cached in blocks, big reads exact)."""
+    def __init__(self, url, block=1 << 13):
+        self.url, self.pos, self.block, self.cache, self.nreq, self.nbytes = url, 0, block, {}, 0, 0
+        r = urllib.request.urlopen(urllib.request.Request(url, method="HEAD", headers=UA), timeout=120)
+        self.size = int(r.headers["Content-Length"])
+    def seekable(self): return True
+    def readable(self): return True
+    def tell(self): return self.pos
+    def seek(self, off, whence=0):
+        self.pos = off if whence == 0 else self.pos + off if whence == 1 else self.size + off; return self.pos
+    def _get(self, a, b):
+        for k in range(5):
+            try:
+                req = urllib.request.Request(self.url, headers={**UA, "Range": f"bytes={a}-{b - 1}"})
+                with urllib.request.urlopen(req, timeout=300) as r: d = r.read()
+                if len(d) == b - a: break
+            except Exception:
+                if k == 4: raise
+                time.sleep(5 * (k + 1))
+        self.nreq += 1; self.nbytes += len(d); return d
+    def read(self, n=-1):
+        if n is None or n < 0: n = self.size - self.pos
+        a, b = self.pos, min(self.size, self.pos + n)
+        if b - a > 4 * self.block: d = self._get(a, b)
+        else:
+            out = []; k = a // self.block
+            while k * self.block < b:
+                if k not in self.cache:
+                    if len(self.cache) > 4096: self.cache.clear()
+                    self.cache[k] = self._get(k * self.block, min(self.size, (k + 1) * self.block))
+                out.append(self.cache[k]); k += 1
+            d = b"".join(out)[a - (a // self.block) * self.block:][: b - a]
+        self.pos = b; return d
+    def readinto(self, buf):
+        d = self.read(len(buf)); buf[: len(d)] = d; return len(d)
 
 
 def vial_code(v):
@@ -37,11 +77,11 @@ def _load_matte(cv_threads):
     return M
 
 
-def segment_specimen(path, cfg):
+def segment_specimen(src, cfg):
     """Authors' per-slice chain on one local stack; returns per-slice body/cuticle pixel counts and limits."""
     import tifffile
     M = _load_matte(cfg.get("cv_threads", 2))
-    tf = tifffile.TiffFile(path)
+    tf = tifffile.TiffFile(src); path = "stack"
     try:
         pages = tf.pages
         # I/O only: the authors' helpers re-open the file per slice; read from the open file instead
@@ -98,17 +138,22 @@ def one(args):
     key = r["key"]; t0 = time.time(); vox = float(r["voxel_um"])
     base = {"key": key, "specimen_code": r.get("specimen_code"), "voxel_um": vox}
     tmp = pathlib.Path(cfg.get("tmp_dir", "/root/tmp_cut")) / f"{key}.tif"; tmp.parent.mkdir(parents=True, exist_ok=True)
+    hf = None
     try:
         if key not in tp: return {**base, "status": "no_true_pages"}
-        with urllib.request.urlopen(urllib.request.Request(r["url_full"], headers=UA), timeout=3600) as resp, open(tmp, "wb") as fh:
-            shutil.copyfileobj(resp, fh, 1 << 22)
-        t_dl = time.time() - t0
-        n_pages, res, qc = segment_specimen(str(tmp), cfg)
+        if cfg.get("fetch", "full") == "range":
+            hf = HTTPFile(r["url_full"], cfg.get("block", 1 << 13)); src = hf; t_dl = 0.0
+        else:
+            with urllib.request.urlopen(urllib.request.Request(r["url_full"], headers=UA), timeout=3600) as resp, open(tmp, "wb") as fh:
+                shutil.copyfileobj(resp, fh, 1 << 22)
+            t_dl = time.time() - t0; src = str(tmp)
+        n_pages, res, qc = segment_specimen(src, cfg)
         if n_pages != int(tp[key]["pages"]): return {**base, "status": "page_mismatch", "n_pages": n_pages, "pages_true": int(tp[key]["pages"])}
         gap = int(cfg.get("seg_image_gap", 1)); v3 = vox ** 3 * gap; rec = {**base, "status": "ok", "n_pages": n_pages, "gap": gap}; arrs = {}
         for tt, ((beg, end), bv, cv) in res.items():
             tag = f"t{tt[0]}"
-            bvf = median_filter(bv, size=25) if len(bv) else bv; cvf = median_filter(cv, size=25) if len(cv) else cv
+            msz = max(1, int(round(cfg.get("medfilt_slices", 25) / gap))) | 1              # authors: 25 slices; in samples of the gap series
+            bvf = median_filter(bv, size=msz) if len(bv) else bv; cvf = median_filter(cv, size=msz) if len(cv) else cv
             b, c = float(bvf.sum() * v3), float(cvf.sum() * v3)
             rec.update({f"{tag}_beginning": int(beg), f"{tag}_end": int(end), f"{tag}_n_slices": int(len(bv)),
                         f"{tag}_body_um3": b, f"{tag}_cuticle_um3": c, f"{tag}_soft_um3": b - c,
@@ -116,7 +161,8 @@ def one(args):
             arrs[f"{tag}_body"] = bv.astype(np.int64); arrs[f"{tag}_cuticle"] = cv.astype(np.int64); arrs[f"{tag}_beginning"] = beg
         np.savez_compressed(out / "slices" / f"{key}.npz", gap=gap, **arrs)
         if qc: qc_jpg(qc, out / "qc" / f"{key}.jpg")
-        return {**rec, "sec_download": round(t_dl, 1), "sec": round(time.time() - t0, 1)}
+        net = {"http_requests": hf.nreq, "http_mb": round(hf.nbytes / 1e6, 1), "file_mb": round(hf.size / 1e6, 1)} if hf else {}
+        return {**rec, **net, "medfilt_size": msz, "sec_download": round(t_dl, 1), "sec": round(time.time() - t0, 1)}
     except Exception as ex:
         return {**base, "status": "error", "error": repr(ex)[:300], "sec": round(time.time() - t0, 1)}
     finally:
