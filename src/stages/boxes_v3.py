@@ -51,11 +51,42 @@ def main(cfg, out):
         except Exception as ex:
             return {"key": key, "status": "error", "error": repr(ex)[:200]}
 
+    def group(rs):  # alt b: one whole-file download per url, every box of that file cut from it
+        todo = [r for r in rs if pre + r["key"] + ".npz" not in have]
+        if not todo: return [{"key": r["key"], "status": "cached"} for r in rs]
+        try: info = BT.layout(todo[0]["url_full"])
+        except Exception as ex: return [{"key": r["key"], "status": "error", "error": repr(ex)[:200]} for r in todo]
+        if info["compression"] == 1: return [one(r) for r in todo]
+        import tifffile
+        url = todo[0]["url_full"]; t0 = time.time(); tmp = pathlib.Path(tempfile.gettempdir()) / f"bxg_{abs(hash(url))}.tif"; res = []
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=1800) as resp, open(tmp, "wb") as f: shutil.copyfileobj(resp, f, 1 << 22)
+            with tifffile.TiffFile(tmp) as tf:
+                for r in todo:
+                    key = r["key"]; z0, z1, y0, y1, x0, x1 = r["box_zyx"]; z1 = min(z1, len(tf.pages))
+                    if (z1 - z0) * (y1 - y0) * (x1 - x0) / 1e6 > cfg.get("max_box_mb", 1500): res.append({"key": key, "status": "box_too_big"}); continue
+                    box = np.stack([tf.pages[i].asarray()[y0:y1, x0:x1] for i in range(z0, z1)])
+                    buf = io.BytesIO(); np.savez_compressed(buf, box=box, box_zyx=np.array([z0, z1, y0, y1, x0, x1]), voxel_um=float(r["voxel_um"]))
+                    c.put_object(Bucket=r2.BUCKET, Key=pre + key + ".npz", Body=buf.getvalue())
+                    res.append({"key": key, "status": "ok", "fetch": "full_file_shared", "shape": list(box.shape), "sec": round(time.time() - t0, 1)})
+        except Exception as ex:
+            res += [{"key": r["key"], "status": "error", "error": repr(ex)[:200]} for r in todo if r["key"] not in {x["key"] for x in res}]
+        finally:
+            if tmp.exists(): os.remove(tmp)
+        return res
+
+    from collections import defaultdict
+    byurl = defaultdict(list)
+    for r in rows: byurl[r["url_full"]].append(r)
+    urls = sorted(byurl); si, sn = cfg.get("shard", [0, 1]); urls = urls[si::sn]
+    print(f"urls {len(urls)} (shard {si}/{sn})", flush=True)
     n = 0
     with cf.ThreadPoolExecutor(cfg.get("workers", 4)) as ex, open(out / "boxes_index.jsonl", "w", encoding="utf-8") as f:
-        for rec in ex.map(one, rows):
-            n += 1; f.write(json.dumps(rec) + "\n"); f.flush()
-            if rec["status"] != "cached": print(n, json.dumps(rec), flush=True)
+        for recs_ in ex.map(lambda u: group(byurl[u]), urls):
+            for rec in recs_:
+                n += 1; f.write(json.dumps(rec) + "
+"); f.flush()
+                if rec["status"] != "cached": print(n, json.dumps(rec), flush=True)
     recs = [json.loads(l) for l in open(out / "boxes_index.jsonl", encoding="utf-8")]
     from collections import Counter
     summ = {"n": len(recs), "status": dict(Counter(r["status"] for r in recs))}
