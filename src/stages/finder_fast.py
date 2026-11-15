@@ -73,6 +73,8 @@ def main(cfg, out):
         return ks
     keyof = lambda r: f"{r['folder']}__{vial_code(r['vial'])}"
     TP = json.loads(get(cfg["true_pages_key"])) if cfg.get("true_pages_key") else {}
+    if cfg.get("only_keys_key"):  # v8: restrict to a key list (specimens still without an approved brain)
+        only = set(json.loads(get(cfg["only_keys_key"]))); recs = [r for r in recs if keyof(r) in only]
     skip = done_elsewhere(); recs = [r for r in recs if keyof(r) not in skip]; print(f"to do: {len(recs)}", flush=True)
     (out / "qc").mkdir(exist_ok=True); n_ok = 0; t_all = time.time()
     with open(out / "finder.jsonl", "w", encoding="utf-8") as fo:
