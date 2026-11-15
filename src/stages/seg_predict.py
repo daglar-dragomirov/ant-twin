@@ -41,7 +41,7 @@ def main(cfg, out):
     R = W / "res_seg" / f"Dataset{did}_AntBrainMix" / f"{tr}__nnUNetPlans__{conf}"; R.mkdir(parents=True, exist_ok=True)
     env = {**os.environ, "nnUNet_raw": str(W / "raw"), "nnUNet_preprocessed": str(W / "pre"), "nnUNet_results": str(W / "res_seg")}
     (W / "raw").mkdir(parents=True, exist_ok=True)
-    pp = f"ant-twin/runs/{cfg['plans_run']}/outputs/"
+    pp = f"ant-twin/runs/{cfg['plans_run']}/outputs/" + cfg.get("plans_subdir", "")
     for f in ("plans.json", "dataset.json", "dataset_fingerprint.json"): c.download_file(r2.BUCKET, pp + f, str(R / f))
     folds = []
     for m in cfg["models"]:
@@ -50,7 +50,11 @@ def main(cfg, out):
         except Exception as ex: print("model not available", m, ex, flush=True)
     print("ensemble folds:", folds, flush=True)
     pre = cfg.get("prefix", "ant-twin/cache/boxes_v3/"); mpre = cfg.get("mask_prefix", "ant-twin/cache/brain_masks_v1/")
-    keys = sorted(k[len(pre):-4] for k in r2.list_keys(c, r2.BUCKET, pre))[: cfg.get("max_specimens", 100000)]
+    if cfg.get("items_key"):  # final: explicit [key, box_prefix, ref_mask_prefix] list (best box per specimen)
+        items_all = json.loads(get(cfg["items_key"])); bpre_of = {k: b for k, b, _ in items_all}; ref_of = {k: r for k, _, r in items_all}
+        keys = sorted(bpre_of)
+    else:
+        keys = sorted(k[len(pre):-4] for k in r2.list_keys(c, r2.BUCKET, pre))[: cfg.get("max_specimens", 100000)]; bpre_of, ref_of = {k: pre for k in keys}, {}
     done = {k[len(mpre):-4] for k in r2.list_keys(c, r2.BUCKET, mpre)}
     todo = [k for k in keys if k not in done]; print(f"boxes {len(keys)}, already segmented {len(done)}, to do {len(todo)}", flush=True)
     (out / "qc").mkdir(exist_ok=True); t = cfg["target_px"]; B = cfg.get("batch", 12)
@@ -60,11 +64,11 @@ def main(cfg, out):
             shutil.rmtree(I, ignore_errors=True); shutil.rmtree(O, ignore_errors=True); I.mkdir(parents=True); O.mkdir(parents=True)
             items = {}
             for j, key in enumerate(todo[b0: b0 + B]):
-                z = np.load(io.BytesIO(get(pre + key + ".npz"))); box = z["box"]; vox = float(z["voxel_um"])
+                z = np.load(io.BytesIO(get(bpre_of[key] + key + ".npz"))); box = z["box"]; vox = float(z["voxel_um"])
                 s = t / max(box.shape[1], box.shape[2]); img = ndi.zoom(box, (1, s, s), order=1)
                 cid = f"S_{b0 + j:04d}"; items[cid] = (key, box, vox, z["box_zyx"])
                 nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.eye(4)), I / f"{cid}_0000.nii.gz")
-            sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", *folds, "-tr", tr, "--disable_progress_bar"], env)
+            sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", *folds, "-tr", tr, "--disable_progress_bar"] + (["--disable_tta"] if cfg.get("disable_tta") else []), env)
             for cid, (key, box, vox, bz) in items.items():
                 q = nib.load(str(O / f"{cid}.nii.gz")).get_fdata().astype(np.uint8).transpose(2, 1, 0)
                 p = ndi.zoom(q, [a / b for a, b in zip(box.shape, q.shape)], order=0)[: box.shape[0], : box.shape[1], : box.shape[2]]
@@ -73,7 +77,14 @@ def main(cfg, out):
                 buf = io.BytesIO(); np.savez_compressed(buf, mask=m, box_zyx=bz, voxel_um=vox); c.put_object(Bucket=r2.BUCKET, Key=mpre + key + ".npz", Body=buf.getvalue())
                 qc_jpg(box, m, out / "qc" / f"{key}.jpg")
                 rec = {"key": key, "voxel_um": vox, "box_shape": list(box.shape), "brain_vox": int(m.sum()), "brain_um3": float(m.sum() * vox ** 3),
-                       "n_components": ncomp, "largest_frac": round(lfrac, 4), "touches_edge": edge, "box_frac": round(float(m.mean()), 4), "folds": folds}
+                       "n_components": ncomp, "largest_frac": round(lfrac, 4), "touches_edge": edge, "box_frac": round(float(m.mean()), 4), "folds": folds,
+                       "box_prefix": bpre_of[key]}
+                if ref_of.get(key):  # agreement with the agent-approved reference mask
+                    try:
+                        rm = np.load(io.BytesIO(get(ref_of[key] + key + ".npz")))["mask"].astype(bool)
+                        if rm.shape == m.shape:
+                            inter = int((rm & (m > 0)).sum()); rec["dice_vs_ref"] = round(2 * inter / max(int(rm.sum() + (m > 0).sum()), 1), 4); rec["vol_ratio_vs_ref"] = round(int((m > 0).sum()) / max(int(rm.sum()), 1), 4)
+                    except Exception as ex_: rec["ref_error"] = repr(ex_)[:100]
                 fo.write(json.dumps(rec) + "\n"); fo.flush()
             print(f"batch {b0}-{b0 + len(items)} in {time.time() - t0:.0f}s", flush=True)
     shutil.rmtree(W / "seg_in", ignore_errors=True); shutil.rmtree(W / "seg_out", ignore_errors=True)
