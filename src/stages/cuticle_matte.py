@@ -168,8 +168,8 @@ def _one(args):
                 shutil.copyfileobj(resp, fh, 1 << 22)
             t_dl = time.time() - t0; src = str(tmp)
         n_pages, res, qc = segment_specimen(src, cfg)
-        if n_pages != int(tp[key]["pages"]): return {**base, "status": "page_mismatch", "n_pages": n_pages, "pages_true": int(tp[key]["pages"])}
-        gap = int(cfg.get("seg_image_gap", 1)); v3 = vox ** 3 * gap; rec = {**base, "status": "ok", "n_pages": n_pages, "gap": gap}; arrs = {}
+        if abs(n_pages - int(tp[key]["pages"])) > int(cfg.get("page_tolerance", 0)): return {**base, "status": "page_mismatch", "n_pages": n_pages, "pages_true": int(tp[key]["pages"])}
+        gap = int(cfg.get("seg_image_gap", 1)); v3 = vox ** 3 * gap; rec = {**base, "status": "ok", "n_pages": n_pages, "pages_true": int(tp[key]["pages"]), "gap": gap}; arrs = {}
         for tt, ((beg, end), bv, cv) in res.items():
             tag = f"t{tt[0]}"
             msz = max(1, int(round(cfg.get("medfilt_slices", 25) / gap))) | 1              # authors: 25 slices; in samples of the gap series
