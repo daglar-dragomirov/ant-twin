@@ -425,15 +425,28 @@ def figS2():
             ax.set_title(f"{cs} (minimum): slice with the largest\nlabel–prediction disagreement\n"
                          f"full volume: Dice {fv:.3f}, volume error {100 * fe:+.1f}%",
                          fontsize=6.0, pad=3, linespacing=1.2)
-    ax = axs.flat[5]; ax.set_axis_off()
-    ax.legend(handles=[Line2D([], [], color=mf.BLUE, lw=1.2, label="human label\n(Toulkeridou et al. 2023)"),
-                       Line2D([], [], color=mf.ORANGE, lw=1.2, ls=(0, (3, 1.5)), label="segmentation model of\nthe held-out fold")],
-              loc="upper left", fontsize=6.4, frameon=False, labelspacing=1.2)
-    chk = [c for c in cases if "full_volume_dice_recomputed" in c]
-    ax.text(0.02, 0.45, "Re-predicted in full on CPU from the\nstored checkpoints (stored → recomputed):\n" +
-            "\n".join(f"{c['case']}: Dice {c['dice']:.4f} → {c['full_volume_dice_recomputed']:.4f}" for c in chk) +
-            "\n\nImages: cropped and resampled to\n520 × 520 px by the data set authors;\nno physical scale available.",
-            transform=ax.transAxes, fontsize=5.8, va="top", color=mf.INK2, linespacing=1.25)
+    # (f) the worst case again, with the reference label moved by the rigid offset found by the label audit
+    #     (tk_audit: per-volume FFT shift of the label; the same shift on every slice of this stack)
+    w = [c for c in cases if c["role"] == "minimum" and "worst_slice" in c][0]
+    dy, dx = 115, 27
+    ax = axs.flat[5]; mf.panel(ax, "f", x=-0.02, y=1.19)
+    img, lab, pr = A[f"{w['case']}_img_worst"], A[f"{w['case']}_lab_worst"], A[f"{w['case']}_pred_worst"]
+    labs = np.roll(lab, (dy, dx), (0, 1))
+    lo, hi = window(img, 0.5, 99.8)
+    ax.imshow(img, cmap="gray", vmin=lo, vmax=hi, interpolation="lanczos")
+    ax.contour(labs.astype(float), [0.5], colors=[mf.BLUE], linewidths=0.9)
+    ax.contour(pr.astype(float), [0.5], colors=[mf.ORANGE], linewidths=0.8, linestyles=[(0, (3, 1.5))])
+    ax.set_xticks([]); ax.set_yticks([])
+    for s_ in ax.spines.values(): s_.set_linewidth(0.4); s_.set_edgecolor(mf.MUTED)
+    sd = 2 * (labs & pr).sum() / max(labs.sum() + pr.sum(), 1)
+    outline_text(ax, 0.03, 0.03, f"slice {w['worst_slice'] + 1} of {w['n_slices']}, slice Dice {sd:.3f}", transform=ax.transAxes,
+                 fontsize=5.6, color="white", va="bottom")
+    ax.set_title(f"{w['case']}: same slice, human label\n"
+                 f"moved by a rigid shift of {dy} × {dx} px\n"
+                 f"full volume: Dice 0.812 after the shift", fontsize=6.0, pad=3, linespacing=1.2)
+    fig.legend(handles=[Line2D([], [], color=mf.BLUE, lw=1.2, label="human label (Toulkeridou et al. 2023)"),
+                        Line2D([], [], color=mf.ORANGE, lw=1.2, ls=(0, (3, 1.5)), label="segmentation model of the held-out fold")],
+               loc="lower center", ncol=2, fontsize=6.4, frameon=False, bbox_to_anchor=(0.5, -0.01))
     mf.save(fig, "figS2_tk_heldout")
     return {"cases": [{k: c[k] for k in c if k not in ("image_r2", "label_r2", "checkpoint_r2")} | {
         "image_r2": c["image_r2"], "label_r2": c["label_r2"], "checkpoint_r2": c["checkpoint_r2"]} for c in cases],
