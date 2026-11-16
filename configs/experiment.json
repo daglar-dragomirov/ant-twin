@@ -1,1 +1,1 @@
-{"stage": "finder_alt", "finder_runs": ["20261115-030654_finder-v8-true-page-counts-for-z-spacing-and-box_668c59782304", "20261115-042152_finder-v8b-memory-light-argmax-resume-remaining_668c59782304"], "targets_key": "ant-twin/meta/finder_alt_targets.json", "margin_frac": 0.6}
+{"stage": "finder_alt", "finder_runs": ["20261116-145025_finder-queens-final-finder-on-the-143-queens-of_1907827dd6c8", "20261116-155606_finder-caste-scans-pass-2-the-203-scans-cached-a_1907827dd6c8"], "targets_key": "ant-twin/meta/finder_alt_caste_targets_v1.json", "margin_frac": 0.6}
