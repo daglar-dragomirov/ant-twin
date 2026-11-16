@@ -9,8 +9,9 @@ of a model trained on Toulkeridou labels only.
 \item\label{dev:qc} Mask QC is done by vision agents instead of human review.
 \item\label{dev:body} Body volume uses v8 instead of v6. The v6 slice spacing was wrong for compressed stacks; the
 median ratio to the owner-measured volumes (S1) changed from $1.15$ to $1.04$.
-\item\label{dev:reg} Registration is a timestamped GitHub commit and tag instead of OSF. The repository is private
-until the preprint is posted.
+\item\label{dev:reg} Registration is a timestamped GitHub commit and tag instead of OSF. The frozen files are public
+in the code repository (\path{paper/prereg/}, with SHA-256 checksums); the history of the original project repository is
+available to editors and reviewers on request.
 \item\label{dev:metime} The measurement-error model was run after the primary test.
 \end{enumerate}
 

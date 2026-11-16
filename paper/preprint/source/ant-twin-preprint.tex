@@ -720,24 +720,20 @@ on worker brains.
 (\path{dsc-biology/ant-twin/}). This includes the frozen brain table, all masks, vision-agent verdicts and QC images,
 run logs, the primary-run outputs (\path{runs/20261115-100746_*}) and the robustness outputs
 (\path{analysis/robustness_v1/}, \path{analysis/r3_extension_v1/}).
-\item \textbf{Index.} An index of all stored objects is in \path{research/ant-twin/r2_index/INDEX.md} and
+\item \textbf{Index.} An index of all stored objects is in \path{paper/r2_index/INDEX.md} of the code repository (also at the bucket root) and
 \path{RUNS.md}.
-\item \textbf{Code} is in two GitHub repositories, currently private:
-  \begin{itemize}[nosep]
-  \item pipeline: \texttt{ant-twin}, one branch per run node;
-  \item write-ups, preregistration and robustness scripts: \texttt{dsc-biology}, \path{research/ant-twin/}.
-  \end{itemize}
-\item \textbf{Preregistration.} Frozen as tag \texttt{ant-twin-prereg-v1.0} (commit \texttt{c01e2ee}; freeze commit
-\texttt{3b1e350}).
+\item \textbf{Code and write-ups} are public at \url{https://github.com/daglar-dragomirov/ant-twin}: the pipeline
+(one branch per run node; each run's \texttt{meta.json} records the exact commit) and, in \path{paper/}, the
+preregistration, result reports, analysis and robustness scripts, the storage index and the manuscript source.
+\item \textbf{Preregistration.} Frozen on 15 November 2026 (13:07 UTC+3) as tag \texttt{ant-twin-prereg-v1.0}
+(commit \texttt{c01e2ee}; freeze commit \texttt{3b1e350}) in the author's project repository, before any model containing
+colony size was fitted to real brain volumes. The frozen files are reproduced unchanged in \path{paper/prereg/}
+(SHA-256 of \path{prereg_v1.0_frozen.md}: \texttt{212bc991\ldots{}5230}; of \path{prereg_draft.md}:
+\texttt{94689629\ldots{}2c2e}); the history of the project repository is available to editors and reviewers on request.
 \end{itemize}
 
-\paragraph{Plan for release.} Before posting:
-\begin{enumerate}[nosep]
-\item make both repositories public;
-\item archive a release on Zenodo with a DOI, containing the brain table, species tables, masks, QC verdicts and
-analysis code;
-\item deposit a copy of the preregistration on OSF with the original commit date. \marker{\textbf{[AUTHOR: confirm]}}
-\end{enumerate}
+\paragraph{Planned archive.} A release with a DOI (Zenodo) will contain the brain table, species tables, masks, QC
+verdicts and the analysis code.
 
 \paragraph{Third-party data.}
 \begin{itemize}[nosep]

@@ -41,7 +41,9 @@ before any model with colony size was fitted to real brain volumes. The frozen f
 
 They were committed with the tag `ant-twin-prereg-v1.0` (commit `c01e2ee`) in the author's project repository,
 whose history is available to editors and reviewers on request. Every deviation is listed in Appendix A of the
-manuscript.
+manuscript. The preregistration and some working reports in [`paper/results/`](paper/results/) are written in
+Russian, the author's working language; the manuscript and its appendices state the plan, the rules and all
+results in English.
 
 ## How the measurement works
 
@@ -77,7 +79,7 @@ python -I run.py
 `run.py` reads the stage name from the config and runs `src/stages/<stage>.py`. Each run writes a `meta.json` with
 the commit, the machine, the start and end time and the status, plus its full log and outputs. Runs are stored
 in an object store; [`paper/r2_index/INDEX.md`](paper/r2_index/INDEX.md) maps every stage to its accepted run, and
-[`RUNS.md`](paper/r2_index/RUNS.md) lists all 156 runs, including failed and superseded ones, with the reason.
+[`RUNS.md`](paper/r2_index/RUNS.md) lists all 157 runs, including failed and superseded ones, with the reason.
 A public release with a DOI (Zenodo) will contain the brain table, the masks, the QC verdicts and the analysis
 outputs.
 

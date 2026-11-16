@@ -36,11 +36,7 @@ training run (full volume); tiles give the Dice of the shown slice.
 \textbf{(e)}~For the lowest case, the slice with the largest label--prediction disagreement in the full-volume
 prediction.
 Full volumes were re-predicted for two cases and reproduce the stored values (Dice $0.9806$ and $0.9806$ for
-\texttt{TK\_057}, $0.4951$ and $0.4952$ for \texttt{TK\_063}). In the lowest case, the human label of this re-sliced
-stack appears displaced from the visible brain tissue: it covers muscle and air spaces and misses part of the neuropil
-that seg v3 outlines. The other stack of the same species (\texttt{TK\_062}, sliced along another axis) has a held-out
-Dice of $0.969$. This low value may therefore reflect a misaligned reference rather than a segmentation failure; the
-case is counted unchanged in Figure~\ref{fig:scan}d--e and Table~\ref{tab:S2}. Across the $117$ cases the median Dice
+\texttt{TK\_057}, $0.4951$ and $0.4952$ for \texttt{TK\_063}). In the lowest case, the label in the deposited training archive is offset from its image by about $115 \times 27$~pixels on every slice; moved back by this rigid shift, it outlines the brain. A check of all $117$ held-out reference labels (full re-prediction with the held-out fold model; rigid-offset rule fixed before the run: shift $\geq 5$~px, Dice gain $\geq 0.10$, consistent across slices) flagged only this stack. We kept it in Figure~\ref{fig:scan}d--e and Table~\ref{tab:S2}; without it the median Dice is unchanged. Across the $117$ cases the median Dice
 was $0.969$, and $3$ cases were below $0.90$. The dataset authors cropped and resampled the images to
 $520 \times 520$ pixels per slice, so no physical scale is given.
 \emph{Data:} images and labels in \path{runs/20261113-181636_*/} (\path{outputs/nnUNet_raw/Dataset501_AntBrainTK/});

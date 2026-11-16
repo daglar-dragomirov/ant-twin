@@ -2,7 +2,7 @@
 
 One row per run folder (same content as `RUNS.csv`). Snapshot of R2 taken 2026-11-15 ~18:10 UTC. Entry point: `ant-twin/INDEX.md` (pipeline map, legends, reference files).
 
-**156 run folders.** accepted: 85, failed: 28, cancelled: 22, superseded: 21. (Cuticle rows updated 2026-11-16 after the R3 extension finished.)
+**157 run folders.** accepted: 85, failed: 28, cancelled: 22, superseded: 21. (Cuticle rows updated 2026-11-16 after the R3 extension finished.)
 
 **Columns.** `date_utc` comes from the folder name (UTC start time). `orx_node` is the experiment node (code = git branch `orx/<slug>` in github.com/daglar-dragomirov/ant-twin; exact commit in each `meta.json`). `status` is the role of the run in the project (legend in INDEX.md); `orx_outcome` is what orx recorded for the job. `meta_status` / `r2_verified` are copied from the run's `meta.json`: cancelled runs never rewrote it, so they still say `running` / `false` even when their outputs were uploaded and are complete.
 
@@ -166,6 +166,7 @@ One row per run folder (same content as `RUNS.csv`). Snapshot of R2 taken 2026-1
 | `20261115-180820_cuticle-matte-gap-1-control-every-slice-authors_384a715a6074` | 2026-11-15 18:08 | `41bd798a` | Cuticle Matte gap-1 control: every slice on 10 validation specimens | accepted | VALID; R3X | cancelled | false | 20 | 3.5 | Gap-1 control: 8 ok; gap-3/gap-1 body 0.9996 (0.990-1.010); cancelled with 1 specimen left |
 | `20261115-195412_cuticle-matte-v2d-accept-page-count-within-1-of_384a715a6074` | 2026-11-15 19:54 | `60a953e7` | Cuticle Matte v2d: page tolerance 1; remaining uncompressed keys | accepted | R3X | cancelled | false | 40 | 7.5 | Matte v2d: 18 ok; slow CPU-bound tail moved to v2e |
 | `20261115-222211_cuticle-matte-v2e-slices-of-a-specimen-processed_384a715a6074` | 2026-11-15 22:22 | `b333c996` | Cuticle Matte v2e: chunked slices; last 7 uncompressed keys | accepted | R3X | done | true | 19 | 3.7 | Matte v2e: 7/7 ok (chunked mode, identical to unchunked); with v2..v2d completes 185/185 specimens -> analysis/r3_extension_v1/ |
+| `20261116-061344_tk-reference-audit-re-predict-all-117-held-out-t_fbb50b957159` | 2026-11-16 06:13 | `4fa55ae4` | TK reference audit: re-predict 117 held-out TK cases; rigid-offset screen | accepted | VALID | done | true | 122 |  | 117 cases reproduced (max diff 1e-4); only TK_063 flagged (archive label offset ~115x27 px); median Dice 0.969 either way |
 
 ## orx runs without an R2 folder
 

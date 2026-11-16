@@ -273,6 +273,10 @@ The approved boxes form `meta/seg_final_items.json`: 530 = boxes_v4 462 + grow 6
 - `runs/20261113-233327_tk-independent-test-v2-mask-polarity-both-naming_6945dce09bf2/` (`c5e6927c`): TK model on unseen testing.zip species. Final numbers in `results/tk_independent_test.md`: Dice median 0.965, |vol err| 1.3% on 17 species. Superseded invalid v1: `20261113-231635`.
 - `runs/20261113-181741_cuticle-replication-owners-colony-cuticle-pgls-w_DESKTOP-7Q7S0N3/` (`70183aef`): the owners' colony→cuticle PGLS, replicated at −0.041/SD as published; power table for the prereg. Earlier run of the same node: `20261113-181033`.
 
+
+### Stage 13 — audit of the Toulkeridou reference labels — **DONE (16 Nov)**
+- Run (accepted, VALID): `runs/20261116-061344_tk-reference-audit-re-predict-all-117-held-out-t_fbb50b957159/` (node `4fa55ae4`): all 117 held-out TK cases re-predicted (Dice reproduced to 1e-4), rigid-offset screen of the reference labels. Only TK_063 flagged (label offset ~115×27 px in the deposited archive); median Dice 0.969 with or without it. Write-up: dsc-biology `research/ant-twin/results/tk_audit_v1.md` (copy `analysis/results_md/`). Two earlier attempts on the same node failed before any case (uv cache lock; slow PyPI) — no R2 outputs of value.
+
 ## 5. Key reference files in `meta/`
 
 | File / prefix | Content |
