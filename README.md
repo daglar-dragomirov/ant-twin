@@ -116,6 +116,7 @@ preregistration.
 ## Citation
 
 Dragomirov D. (2026). Workers of large-colony ants do not have smaller brains: a preregistered test. Preprint.
+ORCID: [0009-0003-6110-4188](https://orcid.org/0009-0003-6110-4188).
 (DOI to be added.)
 
 Contact: open an issue in this repository.
