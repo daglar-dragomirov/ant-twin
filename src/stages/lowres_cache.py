@@ -4,7 +4,7 @@ Politeness to the KIT server: at most `workers` specimens at a time, each with 8
 already in the cache are skipped. Each entry is ant-twin/cache/lowres/<folder>__<vial>.npz holding `img` (uint8 z,y,x)
 and geometry (n_lowres, full-res pages/H/W, voxel_um, file_bytes).
 Config: specimens_run, workers, only_workers_with_colony, max_specimens, prefix,
-        castes (default ["worker"]), keys_key (optional R2 JSON list of <folder>__<vial> keys; when given, only these
+        castes (default ["worker"]), reverse, keys_key (optional R2 JSON list of <folder>__<vial> keys; when given, only these
         specimens, of any listed caste, are fetched).
 Outputs: cache_index.jsonl (key, status, shape, bytes, seconds), summary.json.
 """
@@ -31,6 +31,7 @@ def main(cfg, out):
         d = d[[f"{f}__{vial_code(v)}" in want for f, v in zip(d.folder, d.vial)]]
         print(f"key list {cfg['keys_key']}: {len(want)} keys, {len(d)} specimens matched", flush=True)
     recs = d.to_dict("records")[: cfg.get("max_specimens", 100000)]
+    if cfg.get("reverse"): recs = recs[::-1]  # second process walks the list from the other end
     have = set(r2.list_keys(c, r2.BUCKET, pre))
     print(f"specimens {len(recs)}, already cached {len(have)}", flush=True)
 
