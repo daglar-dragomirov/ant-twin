@@ -4,10 +4,10 @@ Seed: the approved full-res brain mask (inside the head by construction). Per sp
 1. ROI = brain centre +- k_roi x the largest brain half-extent, cut from the low-res stack (true page count for z),
    resampled to isotropic voxels (side <= max_side); the ROI grows x1.5 (twice at most) while the head touches an
    inner ROI face.
-2. Body mask: cuticle = smoothed intensity > top multi-Otsu threshold (3 classes), closed once; every 2D slice along
-   each of the three axes is hole-filled and the fills are united (a hole fill never leaks outward); 3D hole fill;
-   the component holding the brain. Fallback when the brain is not inside: the lower threshold (mean of the two
-   multi-Otsu thresholds).
+2. Body mask: cuticle = smoothed intensity > threshold, closed; every 2D slice along each of the three axes is
+   hole-filled and the fills are united (a hole fill never leaks outward); 3D hole fill; the component holding the
+   brain. Thresholds tried from high to low (multi-Otsu 3 classes: t_hi, (t_lo + t_hi)/2, t_lo + (t_hi - t_lo)/4),
+   closing 1 then 2 voxels; the first mask holding the brain and filling < 60 % of the ROI is used.
 3. Head = the brain-holding part of that mask, split from the thorax and appendages by a marker watershed on the
    negative distance map D (split lines run along the narrowest constrictions: neck, appendage joints). Dc = 90th
    percentile of D over the brain. Three variants (the vision agent picks the best per specimen):
@@ -55,18 +55,20 @@ def keep_seeded(m, seed):
 
 
 def body_mask(g, seed):
+    """Thresholds from high to low (thin cuticle at coarse low-res needs a lower one), closing 1 then 2 voxels; the first
+    mask that holds the brain and fills < 60 % of the ROI (no leak into the medium) is used."""
     from skimage.filters import threshold_multiotsu
     t_lo, t_hi = [float(t) for t in threshold_multiotsu(g[::2, ::2, ::2], classes=3)]
-    for T in (t_hi, (t_lo + t_hi) / 2):
-        C = ndi.binary_closing(np.pad(g > T, 2), iterations=1)[2:-2, 2:-2, 2:-2]
-        F = C.copy()
-        for ax in range(3):
-            for i in range(C.shape[ax]):
-                sl = [slice(None)] * 3; sl[ax] = i; sl = tuple(sl)
-                F[sl] |= ndi.binary_fill_holes(C[sl])
-        F = ndi.binary_fill_holes(F)
-        F = keep_seeded(F, seed)
-        if F.any(): return F, C, T
+    for T in (t_hi, (t_lo + t_hi) / 2, t_lo + 0.25 * (t_hi - t_lo)):
+        for it in (1, 2):
+            C = ndi.binary_closing(np.pad(g > T, 3), iterations=it)[3:-3, 3:-3, 3:-3]
+            F = C.copy()
+            for ax in range(3):
+                for i in range(C.shape[ax]):
+                    sl = [slice(None)] * 3; sl[ax] = i; sl = tuple(sl)
+                    F[sl] |= ndi.binary_fill_holes(C[sl])
+            F = keep_seeded(ndi.binary_fill_holes(F), seed)
+            if F.any() and F.mean() < 0.6: return F, C, T
     return None, None, t_hi
 
 
