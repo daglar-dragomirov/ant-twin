@@ -20,6 +20,8 @@ Config: castes (default ["worker"]), exclude_keys_key (R2 list of keys already d
 Outputs: cuticle.jsonl, slices/<key>.npz (per-slice raw counts), qc/<key>.jpg, summary.json.
 """
 import io, json, os, time, shutil, pathlib, urllib.request, concurrent.futures as cf
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"):  # one BLAS thread per worker process: OpenBLAS
+    os.environ.setdefault(_v, "1")                                         # re-creates a 128-thread pool in every forked worker
 import numpy as np
 import r2
 
