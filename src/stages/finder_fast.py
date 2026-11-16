@@ -38,6 +38,22 @@ def crop_to_specimen(v, margin):
     return v[z0:z1, y0:y1, x0:x1], [int(z0), int(y0), int(x0)]
 
 
+def specimen_mask(v):
+    """Specimen mask on a low-res stack (cuticle class, tube wall removed); as stage tiny_ends."""
+    from skimage.filters import threshold_multiotsu
+    from skimage.morphology import disk
+    g = ndi.gaussian_filter(v.astype(np.float32), 1.0)
+    t0, t1 = (float(x) for x in threshold_multiotsu(g[::2, ::4, ::4], classes=3))
+    m = np.zeros(g.shape, bool)
+    for z in range(g.shape[0]):
+        tube = ndi.binary_fill_holes(g[z] > t0); inner = ndi.binary_erosion(tube, structure=disk(1), iterations=6)
+        sh = ndi.binary_closing((g[z] > t1) & inner, structure=disk(3)); f = ndi.binary_fill_holes(sh)
+        m[z] = sh if f.sum() > 0.6 * max(inner.sum(), 1) else f
+    lab, n = ndi.label(m)
+    if n == 0: return m
+    s_ = ndi.sum(m, lab, range(1, n + 1)); return np.isin(lab, [i + 1 for i in range(n) if s_[i] >= 0.03 * s_.max()])
+
+
 def main(cfg, out):
     import torch, pandas as pd
     import torch.nn.functional as F
@@ -128,7 +144,6 @@ def main(cfg, out):
                 lo = np.array([zz.min(), yy.min(), xx.min()]) * scale + off; hi = (np.array([zz.max(), yy.max(), xx.max()]) + 1) * scale + off
                 return lo, hi
             if cfg.get("ends_mode"):  # rescue: per end of the long axis, the largest component not among the top 3
-                from stages.tiny_ends import specimen_mask
                 m = specimen_mask(v); pts = np.argwhere(m)
                 if len(pts) < 100:
                     fo.write(json.dumps({**rec, "key": key + "@E1", "status": "no_specimen"}) + chr(10)); fo.flush(); continue
