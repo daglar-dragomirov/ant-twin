@@ -85,8 +85,7 @@ def main(cfg, out):
                     "voxel_um": r["voxel_um"], "folder": r["folder"], "vial": r["vial"], "url_full": r["url_full"]}
             if i % 20 == 0 and key in done_elsewhere(): continue
             if cfg.get("require_true_pages") and key not in TP:  # compressed stacks: the cached page estimate is wrong
-                fo.write(json.dumps({**base, "status": "no_true_pages"}) + "
-"); continue
+                fo.write(json.dumps({**base, "status": "no_true_pages"}) + chr(10)); continue
             try:
                 z = np.load(io.BytesIO(get(cfg.get("cache_prefix", "ant-twin/cache/lowres/") + key + ".npz")))
                 v, nlow, P, H, Wd = z["img"], int(z["n_lowres"]), int(z["pages"]), int(z["H"]), int(z["W"])
