@@ -7,12 +7,15 @@ Seed: the approved full-res brain mask (inside the head by construction). Per sp
 2. Body mask: cuticle = smoothed intensity > threshold, closed; every 2D slice along each of the three axes is
    hole-filled and the fills are united (a hole fill never leaks outward); 3D hole fill; the component holding the
    brain. Thresholds tried from high to low (multi-Otsu 3 classes: t_hi, (t_lo + t_hi)/2, t_lo + (t_hi - t_lo)/4),
-   closing 1 then 2 voxels; the first mask holding the brain and filling < 60 % of the ROI is used.
+   closing 1 then 2 voxels; before each 2D fill, tube-wall rings (cuticle components spanning >= 60 % of the section in
+   both directions and enclosing >= 30 % of it) are removed; the first mask holding >= 90 % of the brain and filling
+   < 50 % of the ROI is used.
 3. Head = the brain-holding part of that mask, split from the thorax and appendages by a marker watershed on the
    negative distance map D (split lines run along the narrowest constrictions: neck, appendage joints). Dc = 90th
    percentile of D over the brain. Three variants (the vision agent picks the best per specimen):
      A "core":  markers = component of {D >= 0.5 Dc} holding the brain (head) vs. all other components of it and the
-                ROI border (rest); then an opening of radius 0.15 Dc removes thin attachments (antennae).
+                ROI border (rest); then an opening of radius 0.15 Dc removes thin attachments (antennae); a closing of
+                radius 0.2 Dc + hole fill closes box-shaped notches left where the cuticle is open along all three axes (A, B; v3).
      B "hmax":  markers = h-maxima of D (h = 0.08 Dc); head = basins whose maximum lies in the head core; opening 0.15 Dc.
      C "interior": the same on the interior (body minus a 1-voxel-dilated cuticle), so parts that only touch the head
                 stay apart by their two cuticle walls; the head's own wall (3 voxels) is added back, closing 0.15 Dc,
@@ -54,11 +57,27 @@ def keep_seeded(m, seed):
     return lab == int(np.argmax(hit)) if hit.max() > 0 else np.zeros_like(m)
 
 
+def drop_tube_rings(C2):
+    """2D: remove cuticle components that look like the specimen tube wall (spanning >= 60 % of the section in both
+    directions and enclosing >= 30 % of it), so the medium inside the tube is not hole-filled."""
+    lab, n = ndi.label(C2)
+    if n == 0: return C2
+    out = C2.copy(); H, W = C2.shape
+    for i, sl in enumerate(ndi.find_objects(lab)):
+        if sl is None: continue
+        if (sl[0].stop - sl[0].start) >= 0.6 * H and (sl[1].stop - sl[1].start) >= 0.6 * W:
+            comp = lab[sl] == i + 1
+            if ndi.binary_fill_holes(comp).sum() >= 0.3 * H * W: out[sl][comp] = False
+    return out
+
+
 def body_mask(g, seed):
-    """Thresholds from high to low (thin cuticle at coarse low-res needs a lower one), closing 1 then 2 voxels; the first
-    mask that holds the brain and fills < 60 % of the ROI (no leak into the medium) is used."""
+    """Thresholds from high to low (thin cuticle at coarse low-res needs a lower one), closing 1 then 2 voxels; 2D hole
+    fills along the three axes (tube-wall rings removed first); the first mask that holds >= 90 % of the brain and fills
+    < 50 % of the ROI is used."""
     from skimage.filters import threshold_multiotsu
     t_lo, t_hi = [float(t) for t in threshold_multiotsu(g[::2, ::2, ::2], classes=3)]
+    ns = max(int(seed.sum()), 1)
     for T in (t_hi, (t_lo + t_hi) / 2, t_lo + 0.25 * (t_hi - t_lo)):
         for it in (1, 2):
             C = ndi.binary_closing(np.pad(g > T, 3), iterations=it)[3:-3, 3:-3, 3:-3]
@@ -66,13 +85,13 @@ def body_mask(g, seed):
             for ax in range(3):
                 for i in range(C.shape[ax]):
                     sl = [slice(None)] * 3; sl[ax] = i; sl = tuple(sl)
-                    F[sl] |= ndi.binary_fill_holes(C[sl])
+                    F[sl] |= ndi.binary_fill_holes(drop_tube_rings(C[sl]))
             F = keep_seeded(ndi.binary_fill_holes(F), seed)
-            if F.any() and F.mean() < 0.6: return F, C, T
+            if (F & seed).sum() >= 0.9 * ns and F.mean() < 0.5: return F, C, T
     return None, None, t_hi
 
 
-def split_core(F, seed, sp, Dc, D, open_frac):
+def split_core(F, seed, sp, Dc, D, open_frac, close_frac=0.2):
     from skimage.segmentation import watershed
     core = D >= 0.5 * Dc; lc, _ = ndi.label(core)
     hid = set(np.unique(lc[seed & core])) - {0}
@@ -81,10 +100,11 @@ def split_core(F, seed, sp, Dc, D, open_frac):
     bnd = np.zeros(F.shape, bool); bnd[[0, -1]] = True; bnd[:, [0, -1]] = True; bnd[:, :, [0, -1]] = True
     mk[bnd & F & (mk == 0)] = 2
     head = watershed(-D, mk, mask=F) == 1
-    return keep_seeded(opening(head, open_frac * Dc, sp), seed)
+    head = keep_seeded(opening(head, open_frac * Dc, sp), seed)
+    return keep_seeded(ndi.binary_fill_holes(closing(head, close_frac * Dc, sp)), seed)
 
 
-def split_hmax(F, seed, sp, Dc, D, open_frac, h_frac=0.08):
+def split_hmax(F, seed, sp, Dc, D, open_frac, h_frac=0.08, close_frac=0.2):
     from skimage.segmentation import watershed
     from skimage.morphology import h_maxima
     core = D >= 0.5 * Dc; lc, _ = ndi.label(core)
@@ -93,7 +113,8 @@ def split_hmax(F, seed, sp, Dc, D, open_frac, h_frac=0.08):
     mk, _ = ndi.label(hm)
     ws = watershed(-D, mk, mask=F)
     head = np.isin(ws, list(set(np.unique(mk[hm & hcore])) - {0})) | hcore
-    return keep_seeded(opening(head, open_frac * Dc, sp), seed)
+    head = keep_seeded(opening(head, open_frac * Dc, sp), seed)
+    return keep_seeded(ndi.binary_fill_holes(closing(head, close_frac * Dc, sp)), seed)
 
 
 def split_interior(F, C, seed, sp, Dc_body, open_frac, wall_vox=3):
