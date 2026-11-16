@@ -2,16 +2,17 @@
 
 The protocol, including its deviations, is described here.
 
-\paragraph{Declared at the freeze (prereg v1.0).}
+\paragraph{Declared at the freeze (preregistration version 1.0).}
 \begin{enumerate}[series=deviations]
-\item\label{dev:seg} Segmentation uses the seg v3 ensemble (Toulkeridou labels + agent-approved AntScan brains) instead
-of a model trained on Toulkeridou labels only.
+\item\label{dev:seg} Segmentation uses the segmentation ensemble (trained on Toulkeridou labels and agent-approved
+AntScan brains; Section~\ref{sec:brain}) instead of a model trained on Toulkeridou labels only.
 \item\label{dev:qc} Mask QC is done by vision agents instead of human review.
-\item\label{dev:body} Body volume uses v8 instead of v6. The v6 slice spacing was wrong for compressed stacks; the
-median ratio to the owner-measured volumes (S1) changed from $1.15$ to $1.04$.
+\item\label{dev:body} Body volume uses corrected body masks instead of an earlier version of the body masks, whose
+slice spacing was wrong for compressed stacks; the median ratio to the owner-measured volumes (S1) changed from $1.15$
+to $1.04$.
 \item\label{dev:reg} Registration is a timestamped GitHub commit and tag instead of OSF. The frozen files are public
-in the code repository (\path{paper/prereg/}, with SHA-256 checksums); the history of the original project repository is
-available to editors and reviewers on request.
+in the code repository, with SHA-256 checksums (Data and code availability statement); the history of the original
+project repository is available to editors and reviewers on request.
 \item\label{dev:metime} The measurement-error model was run after the primary test.
 \end{enumerate}
 
@@ -35,12 +36,12 @@ same $6$ trees. Both were recomputed on all $200$ trees after the primary analys
 \item\label{dev:r10} \textbf{R10.} Implemented as an approximation: genus medians of the species-level S3 means in our
 species table. The planned extension to ${\sim}746$ species without species-level colony size was not built.
 \item\label{dev:notrun} \textbf{Not run.} The head-volume variant of R3 (no head masks were produced), and the three
-secondary analyses of prereg Section~9 (number of worker castes, number of queens, path analysis).
+secondary analyses of Section~9 of the preregistration (number of worker castes, number of queens, path analysis).
 \item\label{dev:r3x} \textbf{R3 extension.} Measurement protocol and QC rule were specified after unblinding. The QC
 rule was fixed before the final fits and revised once, on segmentation diagnostics. An interim estimate on $28$ added
 species ($+0.007$) had been seen before the rule was written. Both rule versions are reported.
-\item\label{dev:brain} \textbf{Brain definition.} The preregistration's TODO to record the exact Toulkeridou label
-definition is still open (Section~\ref{sec:brain}).
+\item\label{dev:brain} \textbf{Brain definition.} The preregistration left the exact Toulkeridou label definition
+open, and it has not yet been recorded (Section~\ref{sec:brain}).
 \end{enumerate}
 
 ESS is the effective sample size of the sampler.

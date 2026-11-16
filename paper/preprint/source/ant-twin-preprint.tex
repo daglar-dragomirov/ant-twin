@@ -3,7 +3,7 @@
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{newtxtext,newtxmath} % provides the amssymb symbols; amssymb itself clashes with newtxmath
-\usepackage[varqu,scaled=0.95]{zi4} % scalable typewriter font (Inconsolata) for paths and code
+\usepackage[varqu,scaled=0.95]{zi4} % scalable typewriter font (Inconsolata) for code
 \usepackage{graphicx}
 \usepackage{booktabs,array,makecell,rotating}
 \usepackage[authoryear,round]{natbib}
@@ -27,7 +27,6 @@
 \renewcommand{\textfraction}{0.1}
 \renewcommand{\floatpagefraction}{0.7}
 
-% Open items for the author stay visible in the PDF.
 \newcommand{\marker}[1]{\textcolor{red}{#1}}
 
 \title{Workers of large-colony ants do not have smaller brains:\\a preregistered test}
@@ -101,30 +100,29 @@ colony-size estimate in the primary analysis and in every robustness check.
 \caption[From scan to brain volume]{\textbf{From scan to brain volume.} Panels a--c show the automated pipeline on
 real AntScan scans; d--e show its held-out accuracy.
 \textbf{(a)}~One specimen through brain localisation (\emph{Labidus praedator}, Dorylinae, specimen
-\path{5x__22-04}). Left: maximum-intensity projections (MIP) of the AntScan low-resolution copy that the finder reads
+\path{5x__22-04}). Left: maximum-intensity projections (MIP) of the AntScan low-resolution copy that the head finder reads
 (here \qty{4.9}{\um} between slices, \qty{9.4}{\um} in plane), with the full-resolution head box (blue) at the
 coordinates stored with the box; for this specimen the box had been regrown (Section~\ref{sec:brain}). The ant hangs
 head-down in the vial. Right: middle slice of the head box at full resolution (\qty{2.44}{\um} voxels).
-\textbf{(b)}~The brain mask of the same specimen (seg v3 ensemble, as frozen) as a surface inside its head box. The
+\textbf{(b)}~The brain mask of the same specimen (segmentation ensemble, as frozen) as a surface inside its head box. The
 three orthogonal box slices through the mask centroid are drawn on the back walls with the mask outline. Orthographic
 view; for display only, the surface was computed on the mask downsampled twofold and smoothed. The scale bar lies
 along the front edge of the box floor.
 \textbf{(c)}~Brain masks of eight specimens from the frozen brain table, shown without edits. Each tile shows the scan
 slice with the largest brain cross-section in the full-resolution head box, with the mask outline (orange) and a scale
 bar; the crop is centred on the mask, and white areas lie outside the stored box. Titles give species, subfamily and
-body volume (S1 or v8); the specimen key and voxel size are printed in each tile. \emph{Selection rule:} the pool was
+body volume (owner-measured or from our body masks; Section~\ref{sec:body}); the specimen key and voxel size are
+printed in each tile. \emph{Selection rule:} the pool was
 the $462$ main-analysis workers with a body volume, split into octiles of $\lten$ body volume. From the smallest
 octile up, one specimen was drawn at random (NumPy \texttt{default\_rng}, seed 20261116) among pool workers of
 subfamilies not yet drawn, so the eight specimens come from eight subfamilies. All eight happen to be \qty{2.44}{\um}
 scans, the voxel class of $398$ of the $462$ pool workers. The specimen of panels a--b, framed in blue, is the drawn
 specimen closest to the pool median body volume.
-\textbf{(d)}~Dice and \textbf{(e)}~$|$relative volume error$|$ of seg v3 on held-out folds (species-level folds within
-each source), by reference type: human labels of \citet{toulkeridou2023}, $n = 117$; AntScan gate-1 drafts, $n = 24$;
-agent-approved AntScan masks, $n = 530$ (produced by an earlier model, hence not independent). Boxes show quartiles;
-numbers are medians. Axes are clipped: $8$ cases below Dice $0.80$ and $15$ above $25\%$ error are not shown.
-In all legends, S1 denotes owner-measured volumes (Dataset S1 of \citealp{matte2025}) and v8 our own body masks
-(Section~\ref{sec:body}). The data sources of every panel are listed in the
-\hyperref[sec:data]{Data and code availability statement}.}
+\textbf{(d)}~Dice and \textbf{(e)}~$|$relative volume error$|$ of our segmentation model on held-out folds
+(species-level folds within each source), by reference type: human labels of \citet{toulkeridou2023}, $n = 117$;
+AntScan bootstrap reference masks, $n = 24$; agent-approved AntScan masks, $n = 530$ (produced by an earlier model,
+hence not independent). Boxes show quartiles; numbers are medians. Axes are clipped: $8$ cases below Dice $0.80$ and
+$15$ above $25\%$ error are not shown. Inputs are listed in the code repository's storage index.}
 \label{fig:scan}
 \end{figure}
 
@@ -206,15 +204,15 @@ unstained). Both are partly confounded with body size, so both enter the model a
 \subsection{Brain volume: localisation, segmentation and quality control}\label{sec:brain}
 
 \paragraph{Localisation and segmentation.} The brain pipeline has three steps: localisation, segmentation and quality
-control. First, a low-resolution ``finder'' (nnU-Net 3d, trained on $471$ of $497$ approved low-resolution brains,
+control. First, a low-resolution head finder (nnU-Net 3d, trained on $471$ of $497$ approved low-resolution brains,
 resampled to isotropic \qty{12}{\um} and cropped to the specimen) located the brain in each specimen. A
 full-resolution box was then cut around the head (Figure~\ref{fig:scan}a); boxes that cut off part of the brain were
-regrown, and unresolved cases received second and third finder candidates. Brains were then segmented with seg v3, a
-5-fold nnU-Net 2d ensemble trained on three sources:
+regrown, and unresolved cases received second and third finder candidates. Brains were then segmented with our
+segmentation model, a 5-fold nnU-Net 2d ensemble (hereafter the segmentation ensemble) trained on three sources:
 \begin{itemize}[nosep]
 \item $117$ micro-CT stacks with human brain labels from \citet{toulkeridou2023};
-\item $24$ AntScan brains from a bootstrap round (``gate-1''), whose reference masks are automatic drafts approved by
-vision agents;
+\item $24$ AntScan brains with bootstrap reference masks, that is, automatic draft masks approved by vision agents in a
+first review round;
 \item $530$ AntScan brains approved by vision-agent quality control in earlier rounds.
 \end{itemize}
 Folds were assigned by species within each data source, and the final segmentation of every specimen is the 5-fold
@@ -237,8 +235,9 @@ unblinding (checksum in Appendix~\ref{app:impl}).
 
 \paragraph{Body volume.} This preregistered primary size covariate came from two sources, in this order. Where a
 specimen had been measured by \citet{matte2025}, we used their individual measurement (their Dataset S1; hereafter
-owner-measured volumes). Otherwise we used our own body mask (v8): a three-class multi-Otsu segmentation inside the
-vial, with per-slice contour closing and filling, and correct slice spacing from the true page counts. These masks
+owner-measured volumes). Otherwise we used our own body mask: a three-class multi-Otsu segmentation inside the
+vial, with per-slice contour closing and filling, and correct slice spacing from the true number of slices
+(Appendix~\ref{app:impl}). These masks
 agreed with the owner-measured volumes with a median ratio of $1.04$ ($n = 278$ specimens), and specimens with $20$ or
 more ``guarded'' slices (bright mounting medium) had no valid body volume. Of the $462$ main-analysis workers with a
 body volume, $235$ had owner-measured values and $227$ had values from our masks.
@@ -253,7 +252,8 @@ specimens for validation.
 \paragraph{Subsampled slices.} Because the AntScan server throttles downloads, only the slices actually used were
 read, by HTTP range requests: every third slice, plus every thirtieth slice for the program's $z$-limit search. The
 program's median filter therefore spans $9$ sampled slices instead of $25$. On $8$ specimens processed at every slice,
-the ratio of every-third-slice to every-slice volumes had a median of $0.9996$ for body (range 0.990--1.010). For soft
+the ratio of every-third-slice to every-slice volumes had a median of $0.9996$ for body (range 0.990--1.010; $7$
+specimens, since one bright-medium scan has no body mask at threshold $110$). For soft
 tissue, the median was $0.9991$ (range 0.978--1.002).
 
 \paragraph{Threshold rules.} With the authors' threshold ($110$), a bright mounting medium leaks into the mask in many
@@ -286,12 +286,13 @@ genus transfer and $1$ by genus placement.
 
 \subsection{What was fixed before unblinding, and what was not}\label{sec:prereg}
 
-The analysis plan and outcome rules were preregistered (OSF ``secondary data analysis'' template) as
-\path{prereg_draft.md} v0.1 on 13 November 2026. The plan was frozen, with declared deviations, on 15 November 2026,
+The analysis plan and outcome rules were preregistered (OSF ``secondary data analysis'' template) as version 0.1
+on 13 November 2026. The plan was frozen, with declared deviations, on 15 November 2026,
 before any model containing colony size was fitted to real brain volumes (commit and tag in Appendix~\ref{app:impl}).
 Measurement stages never read the colony table, and until the freeze, analysis runs wrote only a ``has colony'' flag
 next to brain values. The deviations declared at the freeze concern the segmentation model, mask review by vision
-agents instead of humans, and body volumes from v8 instead of v6 masks. They also concern registration as a
+agents instead of humans, and body volumes from corrected body masks instead of an earlier version of the body masks.
+They also concern registration as a
 timestamped GitHub commit and tag instead of OSF, and running the measurement-error model after the primary test.
 After unblinding, the measurement protocol and QC rule of the soft-tissue extension were specified; the rule was fixed
 before the final fits and revised once, on segmentation diagnostics. An interim estimate on $28$ added species
@@ -318,7 +319,7 @@ brain volume on $\lten$ body volume, $\lten$ colony size, stain and scan step:
 In words, $\beta_1$ is the brain--body slope, $\beta_2$ the colony-size slope, and $\beta_3$ to $\beta_5$ adjust for
 staining and scan step. Here $\Clam$ is the Pagel-$\lambda$ transformed MCC covariance~\citep{pagel1999,freckleton2002},
 with $\lambda$ estimated by maximum likelihood; $95\%$ CIs for $\beta_2$ are $t$-intervals with $n - 6$ degrees of
-freedom. We fitted model~\eqref{eq:pgls} in Python with \texttt{pgls.pgls\_lambda} and cross-checked it against
+freedom. We fitted model~\eqref{eq:pgls} with our own Python implementation and cross-checked it against
 \texttt{phylolm}~\citep{ho2014} and \texttt{nlme::gls(corPagel)}; differences were below $10^{-6}$. For tree
 uncertainty, the model was refitted on the $100$ posterior trees and summarised by the median and a pooled interval (a
 mixture of the per-tree $t$ sampling distributions).
@@ -414,8 +415,8 @@ plausibility flag, which used the range 0.05--10\%; it was recorded, but by the 
 review rather than exclusion. R1 and R12 were also recomputed on all $200$ FBD trees (post hoc check;
 Appendix~\ref{app:dev}, item~\ref{dev:r1}).
 
-\paragraph{Study size and question map.} Values marked ``post hoc check'' were computed after the preregistered analyses with
-\path{preprint/tables/supp_checks.py}. The soft-tissue data set is smaller than the primary data set: owner-measured
+\paragraph{Study size and question map.} Values marked ``post hoc check'' were computed after the preregistered
+analyses. The soft-tissue data set is smaller than the primary data set: owner-measured
 soft tissue exists for $154$ of the $270$ species, and our own measurements added $81$ more. The measured workers of
 the other $35$ species all failed QC. Q1 rests on the segmentation validation (Section~\ref{sec:brain}) and the two
 gates (Section~\ref{sec:model}). We answer Q2 with the preregistered test and robustness checks and Q3 with the
@@ -426,8 +427,8 @@ exploratory analyses.
 \subsection{Q1: Are the automated brain volumes accurate enough for a comparative test?}\label{sec:q1}
 
 The automated brain volumes are accurate enough for this test: segmentation matched held-out human labels closely,
-volumes were repeatable within species, and both preregistered gates were passed. On held-out folds, seg v3 agreed
-closely with human labels (Figure~\ref{fig:scan}d--e; Table~\ref{tab:S2}; examples in Supplementary
+volumes were repeatable within species, and both preregistered gates were passed. On held-out folds, our segmentation
+model agreed closely with human labels (Figure~\ref{fig:scan}d--e; Table~\ref{tab:S2}; examples in Supplementary
 Figure~\ref{fig:tk}):
 \begin{center}
 \small
@@ -436,7 +437,7 @@ Figure~\ref{fig:tk}):
 Reference & Dice (median per fold) & $|$volume error$|$ (median per fold) \\
 \midrule
 Human labels~\citep{toulkeridou2023} & 0.962--0.973 & 1.0--2.6\% \\
-AntScan gate-1 drafts & 0.917--0.956 & 3.0--8.9\% (small $n$ per fold) \\
+AntScan bootstrap reference masks & 0.917--0.956 & 3.0--8.9\% (small $n$ per fold) \\
 Agent-approved AntScan masks & 0.982--0.985 & 1.0--1.2\% \\
 \bottomrule
 \end{tabular}
@@ -550,7 +551,7 @@ primary-table body volume gave $+0.034$ (0.014--0.055; adaptive set) and $+0.027
 
 \paragraph{Like-for-like decomposition.} The gap between body and soft-tissue denominators could reflect thinner
 cuticle in large-colony species~\citep{matte2025}. It could also reflect differences between the sources of body
-volume: our v8 masks versus owner-measured volumes or the owners' program. The like-for-like decomposition separates
+volume: our body masks versus owner-measured volumes or the owners' program. The like-for-like decomposition separates
 the two (Figure~\ref{fig:denominators}a; Table~\ref{tab:S6}). When body and soft tissue come from the same instrument
 and the same specimens, the two denominators give similar estimates:
 \begin{center}
@@ -582,21 +583,21 @@ with owner-measured soft tissue.
 \includegraphics[width=\textwidth]{figures/fig4_denominators_cuticle.pdf}
 \caption[Size denominators, cuticle and body-volume quality]{\textbf{Size denominators, cuticle and body-volume
 quality.} \textbf{(a)}~$\beta_2$ for the same species with three size measures: body volume from the primary table
-(S1 or own v8 mask); body volume from the same instrument and specimens as the soft-tissue measure (S1 or the owners'
+(S1 or our body mask); body volume from the same instrument and specimens as the soft-tissue measure (S1 or the owners'
 program); soft tissue. Shown for the $154$ species with S1 soft tissue and for the $235$ species of the extended set.
 Lines are $95\%$ CIs; the grey band is the SESOI.
 \textbf{(b)}~Cuticle volume as a percentage of body volume (same specimens) against $\lten$ colony size. Colour gives
 the source: S1 or our run of the owners' program. The line is OLS and descriptive only.
 \textbf{(c)}~Brain/body volume ratio of main-analysis workers by body-volume source (log scale). The dashed line marks
 the preregistered plausibility limit of $10\%$.
-In all legends, S1 denotes owner-measured volumes (Dataset S1 of \citealp{matte2025}) and v8 our own body masks
-(Section~\ref{sec:body}).}
+In all legends, S1 denotes owner-measured volumes (Dataset S1 of \citealp{matte2025}); our body masks are described in
+Section~\ref{sec:body}.}
 \label{fig:denominators}
 \end{figure}
 
-\paragraph{Body-volume quality.} Brain/body ratios point to errors in a small number of v8 body volumes
-(Figure~\ref{fig:denominators}c; Table~\ref{tab:S9}). With owner-measured bodies, the median brain/body ratio was
-$1.95\%$, and no worker was above $10\%$. For v8 bodies, the median was $2.64\%$, and $6$ workers were above $10\%$,
+\paragraph{Body-volume quality.} Brain/body ratios point to errors in a small number of body volumes from our
+masks (Figure~\ref{fig:denominators}c; Table~\ref{tab:S9}). With owner-measured bodies, the median brain/body ratio was
+$1.95\%$, and no worker was above $10\%$. For bodies from our masks, the median was $2.64\%$, and $6$ workers were above $10\%$,
 with a maximum of $102\%$, which is physically impossible; $28$ workers were above $5\%$. Refits of the primary
 model~\eqref{eq:pgls} (Table~\ref{tab:robustness}, ``post hoc check'' rows) gave:
 \begin{center}
@@ -608,13 +609,13 @@ Change to the primary data & $\beta_2$ & $95\%$ CI & Species \\
 Remove the $6$ workers with brain/body $> 10\%$ & $+0.024$ & 0.007--0.042 & $268$ \\
 Remove workers with brain/body $> 5\%$ & $+0.020$ & 0.004--0.037 & $257$ \\
 Owner-measured (S1) bodies only & $+0.010$ & $-0.011$ to $0.031$ & $155$ \\
-Own v8 bodies only & $+0.035$ & 0.010--0.060 & $162$ \\
+Bodies from our masks only & $+0.035$ & 0.010--0.060 & $162$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 The first two refits still support H2, whereas the fit with owner-measured bodies only is undecided. The brain--body
 slope was steeper with owner-measured bodies ($0.645$) than in the primary fit ($0.473$), which is consistent with
-measurement error in v8 bodies attenuating the size slope. Because colony size correlates weakly with body size
+measurement error in our body masks attenuating the size slope. Because colony size correlates weakly with body size
 ($r = 0.13$), part of the unexplained size signal can then load onto $\beta_2$. The six workers with brain/body
 $> 10\%$ belong to five species, among them two large-colony species (\emph{Linepithema humile}, \emph{Pheidole
 bicarinata}; Table~\ref{tab:S9}).
@@ -698,22 +699,22 @@ on worker brains.
 \phantomsection
 \section*{Data and code availability statement}\label{sec:data}
 
-\paragraph{Current state of the data.}
+\paragraph{Code and data.}
 \begin{itemize}
-\item \textbf{Results, intermediate outputs and model weights} are stored in a Cloudflare R2 bucket
-(\path{dsc-biology/ant-twin/}). This includes the frozen brain table, all masks, vision-agent verdicts and QC images,
-run logs, the primary-run outputs (\path{runs/20261115-100746_*}) and the robustness outputs
-(\path{analysis/robustness_v1/}, \path{analysis/r3_extension_v1/}).
-\item \textbf{Index.} An index of all stored objects is in \path{paper/r2_index/INDEX.md} of the code repository (also at the bucket root) and
-\path{RUNS.md}.
-\item \textbf{Code and write-ups} are public at \url{https://github.com/daglar-dragomirov/ant-twin}: the pipeline
-(one branch per run node; each run's \texttt{meta.json} records the exact commit) and, in \path{paper/}, the
-preregistration, result reports, analysis and robustness scripts, the storage index and the manuscript source.
+\item \textbf{Code repository.} The measurement pipeline and analysis code are public at
+\url{https://github.com/daglar-dragomirov/ant-twin}; every run records the exact code commit it used. The
+\texttt{paper/} folder of the repository contains the preregistration, the result reports, the analysis and robustness
+scripts (including those that generate every figure and table, with the selection rules and seeds of the image
+figures), a storage index listing every run and file, and the manuscript source.
+\item \textbf{Stored data.} The frozen brain table, all masks, vision-agent verdicts and QC images, model weights, run
+logs and the outputs of the primary and robustness analyses are kept in object storage. They are available from the
+corresponding author on request until the archive described below is released.
 \item \textbf{Preregistration.} Frozen on 15 November 2026 (13:07 UTC+3) as tag \texttt{ant-twin-prereg-v1.0}
 (commit \texttt{c01e2ee}; freeze commit \texttt{3b1e350}) in the author's project repository, before any model containing
-colony size was fitted to real brain volumes. The frozen files are reproduced unchanged in \path{paper/prereg/}
-(SHA-256 of \path{prereg_v1.0_frozen.md}: \texttt{212bc991\ldots{}5230}; of \path{prereg_draft.md}:
-\texttt{94689629\ldots{}2c2e}); the history of the project repository is available to editors and reviewers on request.
+colony size was fitted to real brain volumes. The frozen files are reproduced unchanged in the \texttt{paper/} folder of
+the public repository (SHA-256 of the frozen plan, version 1.0: \texttt{212bc991\ldots{}5230}; of the initial version
+0.1: \texttt{94689629\ldots{}2c2e}); the history of the project repository is available to editors and reviewers on
+request.
 \end{itemize}
 
 \paragraph{Planned archive.} A release with a DOI (Zenodo) will contain the brain table, species tables, masks, QC
@@ -729,22 +730,6 @@ verdicts and the analysis code.
 \item \citet{bellroberts2024}: supplementary tables.
 \end{itemize}
 
-\paragraph{Figures and tables} are generated by \path{preprint/figures/make_figures.py},
-\path{preprint/figures/make_image_figures.py} (scan images: Figure~\ref{fig:scan} and Supplementary
-Figures~\ref{fig:tk}--\ref{fig:qcrej}), \path{preprint/tables/make_tables.py} and
-\path{preprint/tables/supp_checks.py}. Every image panel is rendered from data stored in the bucket; the selection
-rules, seeds and the bucket path of every input are recorded in
-\path{preprint/figures/image_data/image_figures_selection.json}, and the rendered figures are stored under
-\path{ant-twin/preprint/v1/figures/}.
-
-\paragraph{Data sources of Figure~\ref{fig:scan}} (bucket \path{dsc-biology/ant-twin/}): low-resolution stack
-\path{cache/lowres/5x__22-04.npz}; head boxes \path{cache/boxes_v4/}, \path{boxes_grow/} and \path{boxes_v5/}; masks
-\path{cache/brain_masks_final/}, the ones counted in the frozen table
-(\path{runs/20261115-093934_*/outputs/brains.jsonl}; each mask's voxel count was checked against the frozen volume);
-held-out metrics \path{runs/20261114-212341_*} and \path{runs/20261114-215207_*}
-(\path{outputs/fold_k/val_per_case.json}). The path of every panel input is listed in
-\path{image_figures_selection.json} (folder \path{preprint/figures/image_data/}).
-
 \section*{AI use statement}
 
 Large-language-model assistants (Claude, Anthropic) were used in this project as research tools, in the same way as
@@ -757,7 +742,8 @@ which the author reviewed. They were also used for literature search, figure pre
 In one place AI is part of the measurement protocol rather than an assistant: mask quality control was performed by
 vision-capable agents (Claude Opus 5.5) following a fixed written protocol (verdict ``good'' means that the box is on
 the head and the brain lies entirely inside it), with a second review of disputed masks. All verdicts and QC images
-are released (Section~\ref{sec:brain}; Appendix~\ref{app:dev}, deviation~\ref{dev:qc}).
+are archived (Section~\ref{sec:brain}; Appendix~\ref{app:dev}, deviation~\ref{dev:qc}; Data and code availability
+statement).
 
 No claim of the paper rests on the assistants alone. Verification relied on checks that do not depend on the
 assistants' judgement: segmentation accuracy was measured against human expert labels of held-out species

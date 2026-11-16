@@ -119,20 +119,20 @@ def draw_schematic(ax):
     w, h, y1 = 14.6, 15.5, 26.5
     xs = [0.5, 17.2, 33.9, 50.6, 67.3, 84.0]
     items = [("AntScan scans", "synchrotron (KIT)\n818 colony workers\n352 species with\nknown colony size"),
-             ("Brain finder", "811 low-res stacks\nnnU-Net 3d\nlocates the brain"),
+             ("Head finder", "811 low-res stacks\nnnU-Net 3d\nlocates the brain"),
              ("Head box", "full-resolution\ncrop around\nthe brain"),
-             ("Segmentation", "seg v3: nnU-Net 2d\n5-fold ensemble;\nheld-out Dice\n0.962-0.973"),
+             ("Segmentation", "nnU-Net 2d\n5-fold ensemble;\nheld-out Dice\n0.962-0.973"),
              ("Vision-agent QC", "every mask: box\non head, mask good,\nbrain fully in box"),
              ("Brain table", "689 workers\n325 species\nfrozen, SHA-256\nICC(1) = 0.90")]
     for x, (t, b) in zip(xs, items):
         box(x, y1, w, h, t, b)
     for a, b_ in zip(xs[:-1], xs[1:]):
         arrow(a + w + 0.3, y1 + h / 2, b_ - 0.3, y1 + h / 2)
-    ax.text(xs[3] + w / 2, y1 - 1.0, "trained on Toulkeridou et al. 2023 (117 stacks, human labels)\n+ 24 gate-1 + 530 agent-approved AntScan brains",
+    ax.text(xs[3] + w / 2, y1 - 1.0, "trained on Toulkeridou et al. 2023 (117 stacks, human labels)\n+ 24 bootstrap reference masks + 530 agent-approved AntScan brains",
             ha="center", va="top", fontsize=5.4, color=INK2, style="italic")
     # row 2: covariates and model
     y2, h2 = 1.0, 15.5
-    box(0.5, y2, 17.5, h2, "Body volume", "S1 of Matte et al. 2025\nwhere measured, else\nown body mask v8\n(ratio to S1: 1.04)", fc="#fbfbfa", ec=MUTED)
+    box(0.5, y2, 17.5, h2, "Body volume", "S1 of Matte et al. 2025\nwhere measured, else\nour body masks\n(ratio to S1: 1.04)", fc="#fbfbfa", ec=MUTED)
     box(20.0, y2, 17.5, h2, "Soft tissue (R3)", "body - cuticle\nS1 (154 species) +\nowners' program on\n141 workers (81 spp.)", fc="#fef4ef", ec=ORANGE)
     box(39.5, y2, 17.5, h2, "Colony size", "species means from\nMatte et al. 2025 S3;\nBell-Roberts et al.\n2024 as fallback", fc="#fbfbfa", ec=MUTED)
     box(59.0, y2, 17.5, h2, "Phylogeny", "Economo et al. 2018\nMCC + posterior trees;\nBorowiec et al. 2025\n(check R2)", fc="#fbfbfa", ec=MUTED)
@@ -143,9 +143,10 @@ def draw_schematic(ax):
 
 def draw_accuracy(axes, letters=("d", "e"), compact=False, panel_x=-0.12):
     """Held-out accuracy of seg v3 by reference type (Dice, |relative volume error|); used by the image-based Fig. 1."""
-    order = [("TK", "Toulkeridou 2023\nhuman labels"), ("AS", "AntScan\ngate-1 drafts"), ("AS2", "AntScan\nagent-approved")]
+    order = [("TK", "human labels\n(Toulkeridou\n2023)"), ("AS", "AntScan\nbootstrap\nreference masks"),
+             ("AS2", "AntScan\nagent-approved\nmasks")]
     if compact:
-        order = [("TK", "Human labels\n(Toulkeridou\n2023)"), ("AS", "AntScan\ngate-1\ndrafts"), ("AS2", "AntScan\nagent-\napproved")]
+        order = [("TK", "Human labels\n(Toulkeridou\n2023)"), ("AS", "AntScan\nbootstrap\nreference\nmasks"), ("AS2", "AntScan\nagent-\napproved")]
     colors = {"TK": BLUE, "AS": ORANGE, "AS2": AQUA}
     rng = np.random.default_rng(3)
     n_low = int((seg.dice < 0.80).sum()); n_hi = int((seg.rel_vol_err.abs() > 0.25).sum())
@@ -249,7 +250,7 @@ def fig3_rows():
     G = "Phylogeny"
     add_pool(G, "R1 FBD trees (6, primary run)", R["R1"]["result"], 270)
     s200 = supp["R1_fbd_200"]
-    add_pool(G, "R1 FBD trees (all 200; draft check)", s200, 270, prereg=False)
+    add_pool(G, "R1 FBD trees (all 200; post hoc check)", s200, 270, prereg=False)
     k = [k for k in r2 if k.startswith("129-158Ma_independent") and "272" in k and "| 100 resamples" in k][0]
     add_pool(G, "R2 Borowiec 2025 tree, 1 sp./genus", r2[k]["summary"], 117)
     add_fit(G, "R12 λ = 1 (Brownian)", R["R12"]["result"]["lambda_1"])
@@ -277,13 +278,13 @@ def fig3_rows():
     add_fit(G, "Body, same 235 species as R3x", f["R3x_adaptive_body_same_species"], prereg=False)
     lf = supp["like_for_like"]["all_235"]
     add_fit(G, "Body, same 235 spp., same instrument as soft", lf["body_same_instrument"], prereg=False)
-    G = "Body-volume quality (draft checks)"
+    G = "Body-volume quality (post hoc checks)"
     bq = supp["body_quality"]
     add_fit(G, "Drop specimens with brain/body > 10%", bq["drop_brain_body_gt10pct"], prereg=False)
     add_fit(G, "Drop specimens with brain/body > 5%", bq["drop_brain_body_gt5pct"], prereg=False)
     add_fit(G, "Drop all autoflagged specimens", bq["drop_all_autoflagged"], prereg=False)
     add_fit(G, "Owners' S1 body volumes only", bq["S1_bodies_only"], prereg=False)
-    add_fit(G, "Own v8 body volumes only", bq["own_v8_bodies_only"], prereg=False)
+    add_fit(G, "Our body-mask volumes only", bq["own_v8_bodies_only"], prereg=False)
     return pd.DataFrame(rows)
 
 
@@ -323,7 +324,7 @@ def fig3():
     hand = [Line2D([], [], color=OUTCOME_COL[o], marker="o", lw=1.4, ms=4.5, label=OUTCOME_LAB[o])
             for o in ("support_H2", "undecided", "equivalence_H0")]
     hand += [Line2D([], [], color=INK2, marker="o", lw=0, ms=4.5, label="preregistered"),
-             Line2D([], [], color=INK2, marker="D", mfc=SURF, lw=0, ms=4.2, label="exploratory / draft check")]
+             Line2D([], [], color=INK2, marker="D", mfc=SURF, lw=0, ms=4.2, label="exploratory / post hoc check")]
     ax.legend(handles=hand, loc="upper center", bbox_to_anchor=(0.55, -0.07), fontsize=6.3, ncol=3, handlelength=1.6,
               frameon=False)
     save(fig, "fig3_forest_beta2")
@@ -349,7 +350,7 @@ def fig4():
             a.text(x, r["ci_high"] + 0.002, f"{r['estimate']:+.3f}", fontsize=5.6, ha="center", va="bottom", color=INK, rotation=90)
     a.set_xticks(range(2)); a.set_xticklabels([s_[0] for s_ in sets], fontsize=6.4)
     a.set_xlim(-0.55, 1.55); a.set_ylim(-0.03, 0.085); a.set_ylabel("β₂ (log10 colony), same species"); a.grid(axis="x", visible=False)
-    a.legend(handles=[Line2D([], [], color=BLUE, marker="o", lw=1.5, ms=4, label="body, primary table (S1 or own v8 mask)"),
+    a.legend(handles=[Line2D([], [], color=BLUE, marker="o", lw=1.5, ms=4, label="body, primary table (S1 or our body mask)"),
                       Line2D([], [], color=INK2, marker="D", lw=1.5, ms=3.6, label="body, same instrument and specimens as soft"),
                       Line2D([], [], color=ORANGE, marker="s", lw=1.5, ms=4, label="soft tissue (body − cuticle)")],
              loc="upper center", bbox_to_anchor=(0.5, -0.24), fontsize=5.8, ncol=1)
@@ -381,7 +382,7 @@ def fig4():
         a.text(i, 700, f"n = {len(v)}\n> 10%: {(v > 10).sum()}", ha="center", va="top", fontsize=5.8, color=INK2)
     a.set_yscale("log"); a.set_ylim(0.08, 1000)
     a.axhline(10, color=INK2, lw=0.6, ls=(0, (3, 3))); a.text(1.5, 10.5, "10%", fontsize=5.8, color=INK2, ha="right", va="bottom")
-    a.set_xticks([0, 1]); a.set_xticklabels(["owners' S1\nbodies", "own v8\nbodies"], fontsize=6.4); a.set_xlim(-0.55, 1.55)
+    a.set_xticks([0, 1]); a.set_xticklabels(["owners' S1\nbodies", "our body\nmasks"], fontsize=6.4); a.set_xlim(-0.55, 1.55)
     a.set_ylabel("brain / body volume (%), per worker"); a.grid(axis="x", visible=False)
     save(fig, "fig4_denominators_cuticle")
 

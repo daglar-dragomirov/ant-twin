@@ -6,31 +6,30 @@
 \renewcommand{\theHfigure}{S\arabic{figure}}
 
 Supplementary Figures~\ref{fig:tk}--\ref{fig:qcrej} show cases chosen by fixed rules with a fixed seed, not the
-best-looking ones. The rules are stated in each legend and recorded, with all input paths, in
-\path{image_figures_selection.json} (folder \path{preprint/figures/image_data/}). Paths refer to the bucket
-\path{dsc-biology/ant-twin/}.
+best-looking ones. The rules are stated in each legend; the inputs are listed in the code repository's storage
+index.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.9\textwidth]{figures/figS1_pipeline_schematic.pdf}
 \caption[Measurement and analysis pipeline (schematic)]{\textbf{Measurement and analysis pipeline (schematic).}
 AntScan synchrotron scans of colony workers pass through low-resolution brain localisation, a full-resolution head
-box, the nnU-Net 2d 5-fold ensemble (seg v3), vision-agent QC and the frozen brain table. Body volume, soft tissue,
-colony size and the phylogeny enter the preregistered PGLS model~\eqref{eq:pgls}. In the previous draft this schematic
-was Fig.~1a; Figure~\ref{fig:scan} now shows the same steps on real scans.}
+box, the segmentation ensemble (nnU-Net 2d, 5 folds), vision-agent QC and the frozen brain table. Body volume, soft
+tissue, colony size and the phylogeny enter the preregistered PGLS model~\eqref{eq:pgls}. Figure~\ref{fig:scan} shows
+the same steps on real scans.}
 \label{fig:schematic}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.86\textwidth]{figures/figS2_tk_heldout.pdf}
-\caption[seg v3 against human labels on held-out Toulkeridou cases]{\textbf{seg v3 against human labels on held-out
-Toulkeridou cases.} Four of the $117$ human-labelled stacks of \citet{toulkeridou2023} that were held out in
+\caption[Segmentation model against human labels on held-out Toulkeridou cases]{\textbf{Segmentation model against
+human labels on held-out Toulkeridou cases.} Four of the $117$ human-labelled stacks of \citet{toulkeridou2023} that were held out in
 cross-validation. \emph{Selection rule:} the cases nearest the 10th, 50th and 90th percentile of per-case held-out
-Dice (a--c) and the case with the lowest Dice (d--e). Each case was predicted by the seg v3 model of the fold whose
-validation set contains it; folds were split by species, so the species was not in training. Predictions were re-run
+Dice (a--c) and the case with the lowest Dice (d--e). Each case was predicted by the segmentation model of the fold
+whose validation set contains it; folds were split by species, so the species was not in training. Predictions were re-run
 on CPU from the stored checkpoints with the nnU-Net validation settings (2d, mirroring, tile step $0.5$). Blue: human
-label; orange, dashed: seg v3.
+label; orange, dashed: segmentation model of the held-out fold.
 \textbf{(a--d)}~The slice with the largest labelled area. Titles give the held-out Dice and volume error stored by the
 training run (full volume); tiles give the Dice of the shown slice.
 \textbf{(e)}~For the lowest case, the slice with the largest label--prediction disagreement in the full-volume
@@ -38,11 +37,7 @@ prediction.
 Full volumes were re-predicted for two cases and reproduce the stored values (Dice $0.9806$ and $0.9806$ for
 \texttt{TK\_057}, $0.4951$ and $0.4952$ for \texttt{TK\_063}). In the lowest case, the label in the deposited training archive is offset from its image by about $115 \times 27$~pixels on every slice; moved back by this rigid shift, it outlines the brain. A check of all $117$ held-out reference labels (full re-prediction with the held-out fold model; rigid-offset rule fixed before the run: shift $\geq 5$~px, Dice gain $\geq 0.10$, consistent across slices) flagged only this stack. We kept it in Figure~\ref{fig:scan}d--e and Table~\ref{tab:S2}; without it the median Dice is unchanged. Across the $117$ cases the median Dice
 was $0.969$, and $3$ cases were below $0.90$. The dataset authors cropped and resampled the images to
-$520 \times 520$ pixels per slice, so no physical scale is given.
-\emph{Data:} images and labels in \path{runs/20261113-181636_*/} (\path{outputs/nnUNet_raw/Dataset501_AntBrainTK/});
-checkpoints and stored metrics in \path{runs/20261114-212341_*/} and \path{runs/20261114-215207_*/}
-(\path{outputs/fold_k/}); displayed slices and predictions in \path{tk_heldout_slices.npz}
-(\path{preprint/figures/image_data/}).}
+$520 \times 520$ pixels per slice, so no physical scale is given.}
 \label{fig:tk}
 \end{figure}
 
@@ -61,9 +56,7 @@ every sampled slice (every third slice) at thresholds $110$, $130$ and $145$, wi
 threshold; grey lines mark the slices shown on the left.
 \textbf{(a)}~Accepted: the three thresholds give the same body ($\body{110}/\body{130} = 1.01$).
 \textbf{(b)}~Rejected: at threshold $110$ the mounting medium fills the vial over long stretches of the stack, so
-$\body{110}$ is $15.6$ times $\body{130}$; threshold $145$ also differs from $130$ by more than $10\%$.
-\emph{Data:} volumes and rule inputs in \path{analysis/r3_extension_v1/cuticle_final.jsonl}; QC sheets and per-slice
-areas in \path{runs/20261115-172355_*/} (\path{outputs/qc/<key>.jpg}, \path{outputs/slices/<key>.npz}).}
+$\body{110}$ is $15.6$ times $\body{130}$; threshold $145$ also differs from $130$ by more than $10\%$.}
 \label{fig:cuticle}
 \end{figure}
 
@@ -71,7 +64,7 @@ areas in \path{runs/20261115-172355_*/} (\path{outputs/qc/<key>.jpg}, \path{outp
 \centering
 \includegraphics[width=0.92\textwidth]{figures/figS4_qc_rejections.pdf}
 \caption[Masks rejected by the vision-agent QC]{\textbf{Masks rejected by the vision-agent QC.} Three masks from the
-final QC round on seg v3 ensemble masks in boxes from the final finder: $268$ masks were reviewed, $124$ accepted and
+final QC round on masks of the segmentation ensemble in boxes from the final head finder: $268$ masks were reviewed, $124$ accepted and
 $144$ rejected. The rejected masks fall into three categories by the agent's box verdict: box not on the head ($62$),
 box position unsure ($45$) and box on the head but mask not good or brain not fully in the box ($37$).
 \emph{Selection rule:} within each category, one mask was drawn at random (seed 20261116) among specimens absent from
@@ -80,9 +73,6 @@ agent reviewed it: eight slices through the head box with the mask outline in re
 agent's note, verbatim.
 \textbf{(a)}~The agent judged the masked structure to be the crop or gut, not the brain.
 \textbf{(b)}~The agent could not decide whether the box was on the head, and judged the mask incomplete.
-\textbf{(c)}~The agent judged the box to be on the head but the brain to be cut off by a box face.
-\emph{Data:} verdicts in \path{meta/brains_v5_auto_review/}; contact sheets in \path{review/brains_v5/qc/<key>.jpg},
-identical by SHA-256 to \path{outputs/qc/<key>.jpg} of the segmentation run \path{runs/20261115-065118_*/} or
-\path{runs/20261115-065120_*/}.}
+\textbf{(c)}~The agent judged the box to be on the head but the brain to be cut off by a box face.}
 \label{fig:qcrej}
 \end{figure}

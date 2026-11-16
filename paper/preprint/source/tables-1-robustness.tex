@@ -1,9 +1,8 @@
 \begin{sidewaystable}
 \centering
 \caption[$\beta_2$ in the primary analysis and all robustness checks]{\textbf{$\boldsymbol{\beta_2}$ ($\lten$ colony
-size) in the primary analysis and all robustness checks.} Outcome labels follow the preregistered decision rules (prereg sec.~7): support H2 = $95\%$ CI $> 0$; support H1 = $95\%$ CI $< 0$; equivalence = $90\%$ CI inside $(-0.02;\,0.02)$; otherwise undecided. $90\%$ intervals for single fits are $t$-intervals with $n - 6$ df. For tree sets and resamples, $\beta_2$ is the median and the interval is the pooled $t$-mixture interval. `Post hoc check' rows were computed after the preregistered analyses by \path{supp_checks.py}.
-Trees: number of trees or resamples, and share: the share of them with $p < 0.05$ (tree sets and resamples only).
-Sources: \path{me/brms_summary_m_main_iter4000.csv}; \path{me/brms_summary_m_tk_iter4000.csv}; \path{me/mcmcglmm_summary_m_main.csv}; \path{preprint/tables/supp_checks.json}; \path{preprint/tables/supp_checks.json} (= \path{primary_v1.md}); \path{primary.json}; \path{r2.json}; \path{r3x.json}; \path{r8.json}.}
+size) in the primary analysis and all robustness checks.} Outcome labels follow the preregistered decision rules (Section~7 of the preregistration): support H2 = $95\%$ CI $> 0$; support H1 = $95\%$ CI $< 0$; equivalence = $90\%$ CI inside $(-0.02;\,0.02)$; otherwise undecided. $90\%$ intervals for single fits are $t$-intervals with $n - 6$ df. For tree sets and resamples, $\beta_2$ is the median and the interval is the pooled $t$-mixture interval. `Post hoc check' rows were computed after the preregistered analyses.
+Trees: number of trees or resamples, and share: the share of them with $p < 0.05$ (tree sets and resamples only).}
 \label{tab:robustness}
 \fontsize{7}{8}\selectfont
 \setlength{\tabcolsep}{3pt}
@@ -54,7 +53,7 @@ BQ & Primary model, specimens with brain/body $>$ 10\% removed & no (post hoc ch
 BQ & Primary model, specimens with brain/body $>$ 5\% removed & no (post hoc check) & 257 & $+0.020$ & $[+0.004;\,+0.037]$ & $[+0.006;\,+0.034]$ & 0.0166 & 0.55 &  &  & support H2 \\
 BQ & Primary model, all autoflagged specimens removed & no (post hoc check) & 265 & $+0.024$ & $[+0.006;\,+0.041]$ & $[+0.009;\,+0.038]$ & 0.0086 & 0.63 &  &  & support H2 \\
 BQ & Primary model, owners' S1 body volumes only & no (post hoc check) & 155 & $+0.010$ & $[-0.011;\,+0.031]$ & $[-0.007;\,+0.028]$ & 0.3364 & 0.59 &  &  & undecided \\
-BQ & Primary model, own v8 body volumes only & no (post hoc check) & 162 & $+0.035$ & $[+0.010;\,+0.060]$ & $[+0.014;\,+0.056]$ & 0.0071 & 0.49 &  &  & support H2 \\
+BQ & Primary model, body volumes from our masks only & no (post hoc check) & 162 & $+0.035$ & $[+0.010;\,+0.060]$ & $[+0.014;\,+0.056]$ & 0.0071 & 0.49 &  &  & support H2 \\
 \bottomrule
 \end{tabular}
 \end{sidewaystable}

@@ -4,7 +4,7 @@ Primary model,100 posterior trees (pooled),0.032526447949870946,0.01406737969511
 Primary model,"Measurement-error model, brms",0.0376805459046917,0.0193382781,0.0554727793,442 / 270,True,support_H2
 Primary model,"Measurement-error model, MCMCglmm",0.0378060470376768,0.019687439612406,0.0559243672327919,442 / 270,True,support_H2
 Phylogeny,"R1 FBD trees (6, primary run)",0.032212489520411336,0.014120329567561419,0.05063370019447538,270,True,support_H2
-Phylogeny,R1 FBD trees (all 200; draft check),0.03248084056104894,0.013943035916619042,0.05099618461677407,270,False,support_H2
+Phylogeny,R1 FBD trees (all 200; post hoc check),0.03248084056104894,0.013943035916619042,0.05099618461677407,270,False,support_H2
 Phylogeny,"R2 Borowiec 2025 tree, 1 sp./genus",0.02911925451955466,0.0009773941279103881,0.05825828747406614,117,True,support_H2
 Phylogeny,R12 λ = 1 (Brownian),0.04028111954178781,0.021588987116075084,0.05897325196750054,270,True,support_H2
 Phylogeny,R12 owners' mean VCV (6 trees),0.03292617170137746,0.014431366639271657,0.05142097676348326,270,True,support_H2
@@ -28,8 +28,8 @@ Size denominator,"R3x soft tissue, S1 + own (adaptive QC)",0.009754432444960326,
 Size denominator,"R3x soft tissue, strict QC",0.001847834914605273,-0.014944737884894168,0.018640407714104714,197,False,equivalence_H0
 Size denominator,"Body, same 235 species as R3x",0.03434171391047297,0.01369791625511443,0.05498551156583151,235,False,support_H2
 Size denominator,"Body, same 235 spp., same instrument as soft",0.013860685741394096,-0.0036737166413170763,0.03139508812410527,235,False,undecided
-Body-volume quality (draft checks),Drop specimens with brain/body > 10%,0.02428957675627208,0.006663896785645208,0.041915256726898956,268,False,support_H2
-Body-volume quality (draft checks),Drop specimens with brain/body > 5%,0.02031486210360267,0.003731305207306152,0.036898418999899193,257,False,support_H2
-Body-volume quality (draft checks),Drop all autoflagged specimens,0.023546111226226518,0.006030599254220965,0.041061623198232075,265,False,support_H2
-Body-volume quality (draft checks),Owners' S1 body volumes only,0.010270233320074262,-0.01077249742184666,0.031312964061995185,155,False,undecided
-Body-volume quality (draft checks),Own v8 body volumes only,0.034788443123146995,0.009600603331832727,0.05997628291446126,162,False,support_H2
+Body-volume quality (post hoc checks),Drop specimens with brain/body > 10%,0.02428957675627208,0.006663896785645208,0.041915256726898956,268,False,support_H2
+Body-volume quality (post hoc checks),Drop specimens with brain/body > 5%,0.02031486210360267,0.003731305207306152,0.036898418999899193,257,False,support_H2
+Body-volume quality (post hoc checks),Drop all autoflagged specimens,0.023546111226226518,0.006030599254220965,0.041061623198232075,265,False,support_H2
+Body-volume quality (post hoc checks),Owners' S1 body volumes only,0.010270233320074262,-0.01077249742184666,0.031312964061995185,155,False,undecided
+Body-volume quality (post hoc checks),Our body-mask volumes only,0.034788443123146995,0.009600603331832727,0.05997628291446126,162,False,support_H2

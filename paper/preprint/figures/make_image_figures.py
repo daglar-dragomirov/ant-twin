@@ -352,7 +352,7 @@ def fig1(sel):
              style="italic", va="top")
     ax4 = fig.add_subplot(g1[1], projection="3d")
     info3d = render_brain_3d(ax4, box, m, vox, blo, bhi)
-    ax4.text2D(0.58, 1.06, "brain mask (seg v3) in the head box, 3D", transform=ax4.transAxes, fontsize=6.0, ha="center", va="bottom")
+    ax4.text2D(0.58, 1.06, "brain mask (segmentation ensemble)\nin the head box, 3D", transform=ax4.transAxes, fontsize=6.0, ha="center", va="bottom")
     ax4.text2D(-0.10, 1.06, "b", transform=ax4.transAxes, fontsize=10, fontweight="bold", va="bottom")
     # ---- rows 2-3: (c) gallery
     gg = G[1].subgridspec(2, 4, hspace=0.30, wspace=0.06)
@@ -427,7 +427,7 @@ def figS2():
                          fontsize=6.0, pad=3, linespacing=1.2)
     ax = axs.flat[5]; ax.set_axis_off()
     ax.legend(handles=[Line2D([], [], color=mf.BLUE, lw=1.2, label="human label\n(Toulkeridou et al. 2023)"),
-                       Line2D([], [], color=mf.ORANGE, lw=1.2, ls=(0, (3, 1.5)), label="seg v3, model of the\nheld-out fold")],
+                       Line2D([], [], color=mf.ORANGE, lw=1.2, ls=(0, (3, 1.5)), label="segmentation model of\nthe held-out fold")],
               loc="upper left", fontsize=6.4, frameon=False, labelspacing=1.2)
     chk = [c for c in cases if "full_volume_dice_recomputed" in c]
     ax.text(0.02, 0.45, "Re-predicted in full on CPU from the\nstored checkpoints (stored → recomputed):\n" +

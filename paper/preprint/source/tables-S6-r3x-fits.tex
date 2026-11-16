@@ -6,55 +6,55 @@ Table~\ref{tab:robustness}.}
 \label{tab:S6}
 \fontsize{7}{8}\selectfont
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{10.6cm}lrrrccrll@{}}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{10.6cm}lrrrccrl@{}}
 \toprule
-Fit & $\lambda$ & $n$ & $\hat\lambda$ & $\beta_2$ & $95\%$ CI & $90\%$ CI & $p$ & Outcome & Source \\
+Fit & $\lambda$ & $n$ & $\hat\lambda$ & $\beta_2$ & $95\%$ CI & $90\%$ CI & $p$ & Outcome \\
 \midrule
-Soft tissue, S1 only (preregistered R3) & ML & 154 & 0.0 & $+0.006$ & $[-0.013;\,+0.024]$ & $[-0.010;\,+0.021]$ & 0.5576 & undecided & \texttt{r3x.json} \\
-Soft tissue, S1 + own, adaptive QC & ML & 235 & 0.0 & $+0.010$ & $[-0.006;\,+0.026]$ & $[-0.004;\,+0.023]$ & 0.2277 & undecided & \texttt{r3x.json} \\
-Body, same species (adaptive set) & ML & 235 & 0.65 & $+0.034$ & $[+0.014;\,+0.055]$ & $[+0.017;\,+0.052]$ & 0.0012 & support H2 & \texttt{r3x.json} \\
-Soft tissue, strict QC (t110) & ML & 197 & 0.0 & $+0.002$ & $[-0.015;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.8284 & equivalence (H0) & \texttt{r3x.json} \\
-Body, same species (strict set) & ML & 197 & 0.63 & $+0.027$ & $[+0.007;\,+0.047]$ & $[+0.010;\,+0.044]$ & 0.0084 & support H2 & \texttt{r3x.json} \\
-Soft tissue, strict QC, threshold 130 & ML & 197 & 0.0 & $+0.002$ & $[-0.015;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.8085 & equivalence (H0) & \texttt{r3x.json} \\
-Soft tissue, strict QC, threshold 145 & ML & 197 & 0.0 & $+0.002$ & $[-0.014;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.7762 & equivalence (H0) & \texttt{r3x.json} \\
-Body, same 154 S1 species & ML & 154 & 0.0 & $+0.020$ & $[+0.002;\,+0.038]$ & $[+0.005;\,+0.035]$ & 0.0326 & support H2 & \texttt{supp\_checks.json} \\
+Soft tissue, S1 only (preregistered R3) & ML & 154 & 0.0 & $+0.006$ & $[-0.013;\,+0.024]$ & $[-0.010;\,+0.021]$ & 0.5576 & undecided \\
+Soft tissue, S1 + own, adaptive QC & ML & 235 & 0.0 & $+0.010$ & $[-0.006;\,+0.026]$ & $[-0.004;\,+0.023]$ & 0.2277 & undecided \\
+Body, same species (adaptive set) & ML & 235 & 0.65 & $+0.034$ & $[+0.014;\,+0.055]$ & $[+0.017;\,+0.052]$ & 0.0012 & support H2 \\
+Soft tissue, strict QC (threshold 110) & ML & 197 & 0.0 & $+0.002$ & $[-0.015;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.8284 & equivalence (H0) \\
+Body, same species (strict set) & ML & 197 & 0.63 & $+0.027$ & $[+0.007;\,+0.047]$ & $[+0.010;\,+0.044]$ & 0.0084 & support H2 \\
+Soft tissue, strict QC, threshold 130 & ML & 197 & 0.0 & $+0.002$ & $[-0.015;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.8085 & equivalence (H0) \\
+Soft tissue, strict QC, threshold 145 & ML & 197 & 0.0 & $+0.002$ & $[-0.014;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.7762 & equivalence (H0) \\
+Body, same 154 S1 species & ML & 154 & 0.0 & $+0.020$ & $[+0.002;\,+0.038]$ & $[+0.005;\,+0.035]$ & 0.0326 & support H2 \\
 \midrule
-Soft tissue, adaptive set, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 235 &  & $+0.010$ & $[-0.006;\,+0.026]$ & $[-0.004;\,+0.023]$ & 0.2277 & undecided & \texttt{supp\_checks.json} \\
-Body, adaptive set, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 235 &  & $+0.028$ & $[+0.009;\,+0.046]$ & $[+0.012;\,+0.043]$ & 0.0035 & support H2 & \texttt{supp\_checks.json} \\
-Soft tissue, adaptive set, $\lambda$ fixed (post hoc check) & 0.65 & 235 &  & $+0.012$ & $[-0.007;\,+0.031]$ & $[-0.004;\,+0.028]$ & 0.2092 & undecided & \texttt{supp\_checks.json} \\
-Body, adaptive set, $\lambda$ fixed (post hoc check) & 0.65 & 235 &  & $+0.034$ & $[+0.014;\,+0.055]$ & $[+0.017;\,+0.052]$ & 0.0012 & support H2 & \texttt{supp\_checks.json} \\
-Soft tissue, adaptive set, $\lambda$ fixed (post hoc check) & 1 & 235 &  & $+0.015$ & $[-0.005;\,+0.035]$ & $[-0.001;\,+0.032]$ & 0.1330 & undecided & \texttt{supp\_checks.json} \\
-Body, adaptive set, $\lambda$ fixed (post hoc check) & 1 & 235 &  & $+0.034$ & $[+0.013;\,+0.056]$ & $[+0.017;\,+0.052]$ & 0.0016 & support H2 & \texttt{supp\_checks.json} \\
-Soft tissue, strict set, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 197 &  & $+0.002$ & $[-0.015;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.8284 & equivalence (H0) & \texttt{supp\_checks.json} \\
-Body, strict set, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 197 &  & $+0.023$ & $[+0.005;\,+0.042]$ & $[+0.008;\,+0.039]$ & 0.0112 & support H2 & \texttt{supp\_checks.json} \\
-Soft tissue, strict set, $\lambda$ fixed (post hoc check) & 0.63 & 197 &  & $+0.003$ & $[-0.017;\,+0.022]$ & $[-0.014;\,+0.019]$ & 0.7974 & equivalence (H0) & \texttt{supp\_checks.json} \\
-Body, strict set, $\lambda$ fixed (post hoc check) & 0.63 & 197 &  & $+0.027$ & $[+0.007;\,+0.047]$ & $[+0.010;\,+0.044]$ & 0.0084 & support H2 & \texttt{supp\_checks.json} \\
-Soft tissue, strict set, $\lambda$ fixed (post hoc check) & 1 & 197 &  & $+0.002$ & $[-0.020;\,+0.025]$ & $[-0.017;\,+0.021]$ & 0.8594 & undecided & \texttt{supp\_checks.json} \\
-Body, strict set, $\lambda$ fixed (post hoc check) & 1 & 197 &  & $+0.026$ & $[+0.004;\,+0.048]$ & $[+0.007;\,+0.044]$ & 0.0233 & support H2 & \texttt{supp\_checks.json} \\
+Soft tissue, adaptive set, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 235 &  & $+0.010$ & $[-0.006;\,+0.026]$ & $[-0.004;\,+0.023]$ & 0.2277 & undecided \\
+Body, adaptive set, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 235 &  & $+0.028$ & $[+0.009;\,+0.046]$ & $[+0.012;\,+0.043]$ & 0.0035 & support H2 \\
+Soft tissue, adaptive set, $\lambda$ fixed (post hoc check) & 0.65 & 235 &  & $+0.012$ & $[-0.007;\,+0.031]$ & $[-0.004;\,+0.028]$ & 0.2092 & undecided \\
+Body, adaptive set, $\lambda$ fixed (post hoc check) & 0.65 & 235 &  & $+0.034$ & $[+0.014;\,+0.055]$ & $[+0.017;\,+0.052]$ & 0.0012 & support H2 \\
+Soft tissue, adaptive set, $\lambda$ fixed (post hoc check) & 1 & 235 &  & $+0.015$ & $[-0.005;\,+0.035]$ & $[-0.001;\,+0.032]$ & 0.1330 & undecided \\
+Body, adaptive set, $\lambda$ fixed (post hoc check) & 1 & 235 &  & $+0.034$ & $[+0.013;\,+0.056]$ & $[+0.017;\,+0.052]$ & 0.0016 & support H2 \\
+Soft tissue, strict set, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 197 &  & $+0.002$ & $[-0.015;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.8284 & equivalence (H0) \\
+Body, strict set, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 197 &  & $+0.023$ & $[+0.005;\,+0.042]$ & $[+0.008;\,+0.039]$ & 0.0112 & support H2 \\
+Soft tissue, strict set, $\lambda$ fixed (post hoc check) & 0.63 & 197 &  & $+0.003$ & $[-0.017;\,+0.022]$ & $[-0.014;\,+0.019]$ & 0.7974 & equivalence (H0) \\
+Body, strict set, $\lambda$ fixed (post hoc check) & 0.63 & 197 &  & $+0.027$ & $[+0.007;\,+0.047]$ & $[+0.010;\,+0.044]$ & 0.0084 & support H2 \\
+Soft tissue, strict set, $\lambda$ fixed (post hoc check) & 1 & 197 &  & $+0.002$ & $[-0.020;\,+0.025]$ & $[-0.017;\,+0.021]$ & 0.8594 & undecided \\
+Body, strict set, $\lambda$ fixed (post hoc check) & 1 & 197 &  & $+0.026$ & $[+0.004;\,+0.048]$ & $[+0.007;\,+0.044]$ & 0.0233 & support H2 \\
 \midrule
-Like-for-like, 235 species (S1 + own): Body, same instrument/specimens (post hoc check) & ML & 235 & 0.353 & $+0.014$ & $[-0.004;\,+0.031]$ & $[-0.001;\,+0.029]$ & 0.1207 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 235 species (S1 + own): Soft tissue, same specimens (post hoc check) & ML & 235 & 0.0 & $+0.010$ & $[-0.006;\,+0.026]$ & $[-0.004;\,+0.023]$ & 0.2277 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 235 species (S1 + own): Body, primary table (post hoc check) & ML & 235 & 0.65 & $+0.034$ & $[+0.014;\,+0.055]$ & $[+0.017;\,+0.052]$ & 0.0012 & support H2 & \texttt{supp\_checks.json} \\
-Like-for-like, 235 species (S1 + own): Body, same instrument, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 235 &  & $+0.014$ & $[-0.002;\,+0.029]$ & $[+0.001;\,+0.027]$ & 0.0867 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 235 species (S1 + own): Soft tissue, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 235 &  & $+0.010$ & $[-0.006;\,+0.026]$ & $[-0.004;\,+0.023]$ & 0.2277 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 235 species (S1 + own): Body, same instrument, $\lambda$ fixed (post hoc check) & 1 & 235 &  & $+0.016$ & $[-0.003;\,+0.036]$ & $[-0.000;\,+0.033]$ & 0.1067 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 235 species (S1 + own): Soft tissue, $\lambda$ fixed (post hoc check) & 1 & 235 &  & $+0.015$ & $[-0.005;\,+0.035]$ & $[-0.001;\,+0.032]$ & 0.1330 & undecided & \texttt{supp\_checks.json} \\
+Like-for-like, 235 species (S1 + own): Body, same instrument/specimens (post hoc check) & ML & 235 & 0.353 & $+0.014$ & $[-0.004;\,+0.031]$ & $[-0.001;\,+0.029]$ & 0.1207 & undecided \\
+Like-for-like, 235 species (S1 + own): Soft tissue, same specimens (post hoc check) & ML & 235 & 0.0 & $+0.010$ & $[-0.006;\,+0.026]$ & $[-0.004;\,+0.023]$ & 0.2277 & undecided \\
+Like-for-like, 235 species (S1 + own): Body, primary table (post hoc check) & ML & 235 & 0.65 & $+0.034$ & $[+0.014;\,+0.055]$ & $[+0.017;\,+0.052]$ & 0.0012 & support H2 \\
+Like-for-like, 235 species (S1 + own): Body, same instrument, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 235 &  & $+0.014$ & $[-0.002;\,+0.029]$ & $[+0.001;\,+0.027]$ & 0.0867 & undecided \\
+Like-for-like, 235 species (S1 + own): Soft tissue, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 235 &  & $+0.010$ & $[-0.006;\,+0.026]$ & $[-0.004;\,+0.023]$ & 0.2277 & undecided \\
+Like-for-like, 235 species (S1 + own): Body, same instrument, $\lambda$ fixed (post hoc check) & 1 & 235 &  & $+0.016$ & $[-0.003;\,+0.036]$ & $[-0.000;\,+0.033]$ & 0.1067 & undecided \\
+Like-for-like, 235 species (S1 + own): Soft tissue, $\lambda$ fixed (post hoc check) & 1 & 235 &  & $+0.015$ & $[-0.005;\,+0.035]$ & $[-0.001;\,+0.032]$ & 0.1330 & undecided \\
 \midrule
-Like-for-like, 154 S1 species: Body, same instrument/specimens (post hoc check) & ML & 154 & 0.0 & $+0.012$ & $[-0.007;\,+0.030]$ & $[-0.004;\,+0.027]$ & 0.2133 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 154 S1 species: Soft tissue, same specimens (post hoc check) & ML & 154 & 0.0 & $+0.006$ & $[-0.013;\,+0.024]$ & $[-0.010;\,+0.021]$ & 0.5576 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 154 S1 species: Body, primary table (post hoc check) & ML & 154 & 0.0 & $+0.020$ & $[+0.002;\,+0.038]$ & $[+0.005;\,+0.035]$ & 0.0326 & support H2 & \texttt{supp\_checks.json} \\
-Like-for-like, 154 S1 species: Body, same instrument, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 154 &  & $+0.012$ & $[-0.007;\,+0.030]$ & $[-0.004;\,+0.027]$ & 0.2133 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 154 S1 species: Soft tissue, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 154 &  & $+0.006$ & $[-0.013;\,+0.024]$ & $[-0.010;\,+0.021]$ & 0.5576 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 154 S1 species: Body, same instrument, $\lambda$ fixed (post hoc check) & 1 & 154 &  & $+0.013$ & $[-0.010;\,+0.035]$ & $[-0.006;\,+0.031]$ & 0.2635 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 154 S1 species: Soft tissue, $\lambda$ fixed (post hoc check) & 1 & 154 &  & $+0.009$ & $[-0.014;\,+0.032]$ & $[-0.010;\,+0.028]$ & 0.4459 & undecided & \texttt{supp\_checks.json} \\
+Like-for-like, 154 S1 species: Body, same instrument/specimens (post hoc check) & ML & 154 & 0.0 & $+0.012$ & $[-0.007;\,+0.030]$ & $[-0.004;\,+0.027]$ & 0.2133 & undecided \\
+Like-for-like, 154 S1 species: Soft tissue, same specimens (post hoc check) & ML & 154 & 0.0 & $+0.006$ & $[-0.013;\,+0.024]$ & $[-0.010;\,+0.021]$ & 0.5576 & undecided \\
+Like-for-like, 154 S1 species: Body, primary table (post hoc check) & ML & 154 & 0.0 & $+0.020$ & $[+0.002;\,+0.038]$ & $[+0.005;\,+0.035]$ & 0.0326 & support H2 \\
+Like-for-like, 154 S1 species: Body, same instrument, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 154 &  & $+0.012$ & $[-0.007;\,+0.030]$ & $[-0.004;\,+0.027]$ & 0.2133 & undecided \\
+Like-for-like, 154 S1 species: Soft tissue, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 154 &  & $+0.006$ & $[-0.013;\,+0.024]$ & $[-0.010;\,+0.021]$ & 0.5576 & undecided \\
+Like-for-like, 154 S1 species: Body, same instrument, $\lambda$ fixed (post hoc check) & 1 & 154 &  & $+0.013$ & $[-0.010;\,+0.035]$ & $[-0.006;\,+0.031]$ & 0.2635 & undecided \\
+Like-for-like, 154 S1 species: Soft tissue, $\lambda$ fixed (post hoc check) & 1 & 154 &  & $+0.009$ & $[-0.014;\,+0.032]$ & $[-0.010;\,+0.028]$ & 0.4459 & undecided \\
 \midrule
-Like-for-like, 81 own-measured species: Body, same instrument/specimens (post hoc check) & ML & 81 & 0.194 & $+0.013$ & $[-0.016;\,+0.042]$ & $[-0.011;\,+0.037]$ & 0.3790 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 81 own-measured species: Soft tissue, same specimens (post hoc check) & ML & 81 & 0.0 & $+0.012$ & $[-0.017;\,+0.041]$ & $[-0.012;\,+0.037]$ & 0.3982 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 81 own-measured species: Body, primary table (post hoc check) & ML & 81 & 0.288 & $+0.026$ & $[-0.012;\,+0.064]$ & $[-0.006;\,+0.058]$ & 0.1836 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 81 own-measured species: Body, same instrument, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 81 &  & $+0.012$ & $[-0.016;\,+0.041]$ & $[-0.011;\,+0.036]$ & 0.3888 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 81 own-measured species: Soft tissue, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 81 &  & $+0.012$ & $[-0.017;\,+0.041]$ & $[-0.012;\,+0.037]$ & 0.3982 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 81 own-measured species: Body, same instrument, $\lambda$ fixed (post hoc check) & 1 & 81 &  & $-0.003$ & $[-0.036;\,+0.030]$ & $[-0.030;\,+0.025]$ & 0.8666 & undecided & \texttt{supp\_checks.json} \\
-Like-for-like, 81 own-measured species: Soft tissue, $\lambda$ fixed (post hoc check) & 1 & 81 &  & $-0.003$ & $[-0.037;\,+0.031]$ & $[-0.031;\,+0.025]$ & 0.8550 & undecided & \texttt{supp\_checks.json} \\
+Like-for-like, 81 own-measured species: Body, same instrument/specimens (post hoc check) & ML & 81 & 0.194 & $+0.013$ & $[-0.016;\,+0.042]$ & $[-0.011;\,+0.037]$ & 0.3790 & undecided \\
+Like-for-like, 81 own-measured species: Soft tissue, same specimens (post hoc check) & ML & 81 & 0.0 & $+0.012$ & $[-0.017;\,+0.041]$ & $[-0.012;\,+0.037]$ & 0.3982 & undecided \\
+Like-for-like, 81 own-measured species: Body, primary table (post hoc check) & ML & 81 & 0.288 & $+0.026$ & $[-0.012;\,+0.064]$ & $[-0.006;\,+0.058]$ & 0.1836 & undecided \\
+Like-for-like, 81 own-measured species: Body, same instrument, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 81 &  & $+0.012$ & $[-0.016;\,+0.041]$ & $[-0.011;\,+0.036]$ & 0.3888 & undecided \\
+Like-for-like, 81 own-measured species: Soft tissue, $\lambda$ fixed (post hoc check) & $10^{-7}$ & 81 &  & $+0.012$ & $[-0.017;\,+0.041]$ & $[-0.012;\,+0.037]$ & 0.3982 & undecided \\
+Like-for-like, 81 own-measured species: Body, same instrument, $\lambda$ fixed (post hoc check) & 1 & 81 &  & $-0.003$ & $[-0.036;\,+0.030]$ & $[-0.030;\,+0.025]$ & 0.8666 & undecided \\
+Like-for-like, 81 own-measured species: Soft tissue, $\lambda$ fixed (post hoc check) & 1 & 81 &  & $-0.003$ & $[-0.037;\,+0.031]$ & $[-0.031;\,+0.025]$ & 0.8550 & undecided \\
 \bottomrule
 \end{tabular}
 \end{sidewaystable}
