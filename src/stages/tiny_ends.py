@@ -5,7 +5,7 @@ body_volume v6), long axis by PCA of the mask voxels (physical units), and for e
 voxels whose projection lies in the outer `end_frac` of the length. Each end becomes a full-res box candidate written
 as a finder.jsonl-compatible row with key "<key>@A" / "<key>@B"; boxes_v3 and seg_predict then process them, and the
 end with a compact brain is chosen after agent QC.
-Config: targets_key + finder_runs (explicit key list; rows of the finder runs supply the specimen fields), true_pages_key
+Config: tags (two end suffixes, default A/B), targets_key + finder_runs (explicit key list; rows of the finder runs supply the specimen fields), true_pages_key
         (exact page count), or (older) specimens_run, targets_from_runs (finder runs whose status==no_brain keys are targets, minus keys rescued ok in
         rescue_runs), rescue_runs, cache_prefix, end_frac, margin_frac.
 Outputs: finder.jsonl (two rows per specimen), summary.json.
@@ -64,7 +64,8 @@ def main(cfg, out):
             if len(pts) < 100: fo.write(json.dumps({**r, "key": key + "@A", "status": "no_specimen"}) + "\n"); continue
             ph = pts * sp; ctr = ph.mean(0); u = np.linalg.svd(ph - ctr, full_matrices=False)[2][0]  # long axis (um)
             proj = (ph - ctr) @ u; lo_p, hi_p = proj.min(), proj.max(); L = hi_p - lo_p
-            for tag, sel in (("A", proj <= lo_p + ef * L), ("B", proj >= hi_p - ef * L)):
+            ta, tb = cfg.get("tags", ["A", "B"])
+            for tag, sel in ((ta, proj <= lo_p + ef * L), (tb, proj >= hi_p - ef * L)):
                 q = pts[sel]; lo = q.min(0).astype(float); hi = q.max(0).astype(float) + 1
                 half = (hi - lo) / 2 * (1 + mf); cc = (lo + hi) / 2
                 c_ = cc * f; h_ = half * f; lim = np.array([P, H, W])
