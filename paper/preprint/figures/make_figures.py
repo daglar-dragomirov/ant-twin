@@ -156,10 +156,13 @@ def draw_accuracy(axes, letters=("d", "e"), compact=False, panel_x=-0.12):
         for i, (src, lab) in enumerate(order):
             s = seg[seg.source == src]
             v = s.dice.to_numpy() if metric == "dice" else 100 * s.rel_vol_err.abs().to_numpy()
-            a.boxplot(v, positions=[i], widths=0.5, showfliers=False, patch_artist=True,
-                      boxprops=dict(facecolor="none", edgecolor=INK2, lw=0.7), medianprops=dict(color=INK, lw=1.1),
-                      whiskerprops=dict(color=INK2, lw=0.7), capprops=dict(color=INK2, lw=0.7))
-            a.scatter(i + rng.uniform(-0.17, 0.17, len(v)), v, s=6, color=colors[src], alpha=0.55, lw=0, zorder=3)
+            # points behind, box and median on top; dense groups get smaller, lighter points (R68)
+            dense = len(v) > 150
+            a.scatter(i + rng.uniform(-0.20, 0.20, len(v)), v, s=3 if dense else 6, color=colors[src],
+                      alpha=0.28 if dense else 0.55, lw=0, zorder=2)
+            a.boxplot(v, positions=[i], widths=0.5, showfliers=False, patch_artist=True, zorder=4,
+                      boxprops=dict(facecolor=(1, 1, 1, 0.35), edgecolor=INK, lw=0.9), medianprops=dict(color=INK, lw=1.5),
+                      whiskerprops=dict(color=INK, lw=0.8), capprops=dict(color=INK, lw=0.8))
             med = np.median(v)
             a.text(i + 0.30, med, f"{med:.3f}" if metric == "dice" else f"{med:.1f}%", fontsize=6.3, va="center", color=INK)
         a.set_xticks(range(3)); a.set_xticklabels([f"{lab}\n(n = {int((seg.source == s_).sum())})" for s_, lab in order])
@@ -377,9 +380,11 @@ def fig4():
     rng = np.random.default_rng(5)
     for i, (src, col) in enumerate((("S1", BLUE), ("v6", ORANGE))):
         v = sp[sp.body_source == src].bf.to_numpy()
-        a.scatter(i + rng.uniform(-0.18, 0.18, len(v)), v, s=6, color=col, alpha=0.6, lw=0, zorder=3)
-        a.boxplot(v, positions=[i], widths=0.5, showfliers=False, boxprops=dict(color=INK2, lw=0.7),
-                  medianprops=dict(color=INK, lw=1.1), whiskerprops=dict(color=INK2, lw=0.7), capprops=dict(color=INK2, lw=0.7))
+        # points behind, box and median on top (R68)
+        a.scatter(i + rng.uniform(-0.20, 0.20, len(v)), v, s=4, color=col, alpha=0.35, lw=0, zorder=2)
+        a.boxplot(v, positions=[i], widths=0.5, showfliers=False, patch_artist=True, zorder=4,
+                  boxprops=dict(facecolor=(1, 1, 1, 0.35), edgecolor=INK, lw=0.9), medianprops=dict(color=INK, lw=1.5),
+                  whiskerprops=dict(color=INK, lw=0.8), capprops=dict(color=INK, lw=0.8))
         a.text(i, 700, f"n = {len(v)}\n> 10%: {(v > 10).sum()}", ha="center", va="top", fontsize=5.8, color=INK2)
     a.set_yscale("log"); a.set_ylim(0.08, 1000)
     a.axhline(10, color=INK2, lw=0.6, ls=(0, (3, 3))); a.text(1.5, 10.5, "10%", fontsize=5.8, color=INK2, ha="right", va="bottom")
