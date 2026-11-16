@@ -30,8 +30,9 @@
 \newcommand{\marker}[1]{\textcolor{red}{#1}}
 
 \title{Workers of large-colony ants do not have smaller brains:\\a preregistered test}
-\author{\marker{[AUTHOR LIST AND AFFILIATIONS --- to be completed by the author]}\\[3pt]
-\normalsize Correspondence: \marker{[e-mail]}}
+\author{Daglar Dragomirov\\[2pt]
+\normalsize Saint Petersburg State University, Saint Petersburg, Russia\\
+\normalsize \href{mailto:daglar.dragomirov@gmail.com}{daglar.dragomirov@gmail.com}}
 \date{}
 
 \begin{document}
@@ -217,10 +218,10 @@ first review round;
 \end{itemize}
 Folds were assigned by species within each data source, and the final segmentation of every specimen is the 5-fold
 ensemble without test-time augmentation (Figure~\ref{fig:scan}b--c). Accuracy was assessed on the held-out folds
-against each kind of reference (Section~\ref{sec:q1}). ``Brain'' follows the \citet{toulkeridou2023} label: all brain
-tissue in the head capsule, including the subesophageal zone. The quality-control notes refer to the subesophageal
-ganglion as part of the mask \marker{\textbf{[CHECK: confirm exact label definition from the Toulkeridou masks; the
-paper does not state it]}}.
+against each kind of reference (Section~\ref{sec:q1}). ``Brain'' is the structure delineated in the reference labels of \citet{toulkeridou2023}: the nervous
+tissue of the head capsule segmented as one object, including the subesophageal zone, which in ants is fused with the
+brain. All masks follow this definition, so it applies equally to every species and cannot bias the comparison among
+them; absolute volumes may differ from studies that exclude the subesophageal zone.
 
 \paragraph{Quality control (QC).} No human reviewed the masks. Instead, every final mask was reviewed by a multimodal
 language-model agent (Claude Opus 5.5, Anthropic; high reasoning effort). It saw a contact sheet of eight slices
@@ -756,25 +757,30 @@ DataCite. The assistants supplied no measurements: all volumes are computed by d
 scans, and colony sizes and phylogenies come from published sources. The author takes full responsibility for the
 content of this paper, including any text, claims or code produced with the aid of these tools.
 
+\section*{Software}
+
+Brain segmentation used nnU-Net v2 \citep{isensee2021}. Statistical analyses used R~4.6.2 \citep{rcore2026} with
+nlme~3.1-171 \citep{pinheiro2026nlme}, phylolm~2.6.5 \citep{ho2014}, ape \citep{paradis2019}, brms \citep{burkner2017}
+with Stan through cmdstanr \citep{carpenter2017}, and MCMCglmm \citep{hadfield2010}; the pipeline was written in
+Python~3.13.
+
 \section*{Acknowledgements}
 
-\marker{[TO ADD.]}
+I thank the AntScan team and the authors of \citet{toulkeridou2023}, \citet{matte2025}, \citet{economo2018},
+\citet{borowiec2025} and \citet{bellroberts2024} for making their data and code openly available. This work received
+no specific funding.
 
 \section*{Author contributions statement}
 
-\marker{[TO ADD.]}
+D.D. is the sole author: he designed the study, wrote the preregistration and the code, performed the analyses and
+wrote the paper.
 
 \section*{Competing interests statement}
 
-\marker{[TO ADD.]}
+The author declares no competing interests.
 
-\nocite{paradis2019}
 \bibliographystyle{plainnat}
 \bibliography{refs}
-
-\noindent Software without a journal reference: nlme (Pinheiro J, Bates D, R Core Team; R package 3.1-171), phylolm
-2.6.5, cmdstanr, R 4.6.2, Python 3.13, nnU-Net v2. \marker{\textbf{[CITATION NEEDED: formal software citations if the
-journal requires them]}}
 
 \appendix
 \input{appendixA-deviations}
