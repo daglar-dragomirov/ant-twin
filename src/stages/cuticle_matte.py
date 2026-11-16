@@ -15,7 +15,7 @@ Per specimen (as the authors' auto_multiscan_segmentation + extract_data_segment
 Only file I/O differs from the authors' scripts: slices are read from one open TiffFile instead of re-opening the file.
 Fetch: fetch='range' reads only the slices used (tifffile over HTTP range requests; IFD chain + every
 seg_image_gap-th page), fetch='full' downloads the file. Median filter: medfilt_slices (authors 25) / gap samples.
-Config: castes (default ["worker"]), exclude_keys_key (R2 list of keys already done), retry_errors, fetch, block, medfilt_slices, specimens_run, keys_key (optional R2 list of keys), true_pages_key, thresholds (list; authors' scripts use
+Config: reverse, castes (default ["worker"]), exclude_keys_key (R2 list of keys already done), retry_errors, fetch, block, medfilt_slices, specimens_run, keys_key (optional R2 list of keys), true_pages_key, thresholds (list; authors' scripts use
 [110, 255] (single scan) and [145, 255] (multiscan); each threshold gets its own limits and volumes, prefix t<low>_), merge_contour, vial_effort, seg_image_gap, workers, cv_threads, shard, qc_slices, tmp_dir.
 Outputs: cuticle.jsonl, slices/<key>.npz (per-slice raw counts), qc/<key>.jpg, summary.json.
 """
@@ -203,6 +203,7 @@ def main(cfg, out):
         done = set(json.loads(get(cfg["exclude_keys_key"]))); d = d[~d.key.isin(done)]
     recs = d.drop_duplicates("key").sort_values("key").to_dict("records")
     si, sn = cfg.get("shard", [0, 1]); recs = recs[si::sn]
+    if cfg.get("reverse"): recs = recs[::-1]  # second pod from the other end
     tp = json.loads(get(cfg["true_pages_key"]))
     miss = [r["key"] for r in recs if r["key"] not in tp]
     if miss: print(f"no true page count for {len(miss)} keys (skipped): {miss[:10]}", flush=True)
