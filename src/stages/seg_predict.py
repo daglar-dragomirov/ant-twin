@@ -3,7 +3,7 @@
 Model: seg v1 nnU-Net 2d (Toulkeridou 2023 + auto-reviewed AntScan), ensemble of the folds listed in cfg (each fold's
 checkpoint from its R2 run). Each box is resized in-plane to target_px (the training scale), predicted in batches,
 mapped back with nearest neighbour; the largest 3D component (after a 1-voxel opening) is the brain.
-Config: models (list of {fold, run, path}), plans_run, dataset_id, configuration, trainer, target_px, batch, prefix,
+Config: fold_volumes (also predict each fold alone: fold_um3, fold_cv = SD/mean of the five fold volumes), models (list of {fold, run, path}), plans_run, dataset_id, configuration, trainer, target_px, batch, prefix,
         max_specimens, workdir.
 Outputs: brains.jsonl (key, brain_vox, brain_um3, components, edge contact, fraction), qc/<key>.jpg (8 slices, red
          contour), masks in R2 ant-twin/cache/brain_masks_v1/<key>.npz, summary.json.
@@ -70,6 +70,16 @@ def main(cfg, out):
                 cid = f"S_{b0 + j:04d}"; items[cid] = (key, box, vox, z["box_zyx"])
                 nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.eye(4)), I / f"{cid}_0000.nii.gz")
             sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", *folds, "-tr", tr, "--disable_progress_bar"] + (["--disable_tta"] if cfg.get("disable_tta") else []), env)
+            fold_vol = {}
+            if cfg.get("fold_volumes"):  # autoflag "fold CV > 15 %": each fold alone, largest component, volume scaled back to the box grid
+                for fo_ in folds:
+                    Of = W / f"seg_out_f{fo_}"; shutil.rmtree(Of, ignore_errors=True); Of.mkdir(parents=True)
+                    sh(["nnUNetv2_predict", "-i", str(I), "-o", str(Of), "-d", str(did), "-c", conf, "-f", fo_, "-tr", tr, "--disable_progress_bar"] + (["--disable_tta"] if cfg.get("disable_tta") else []), env)
+                    for cid, (key_, box_, vox_, _) in items.items():
+                        qf = nib.load(str(Of / f"{cid}.nii.gz")).get_fdata().astype(np.uint8).transpose(2, 1, 0)
+                        mf, _, _ = largest(qf)
+                        fold_vol.setdefault(cid, {})[fo_] = float(mf.sum() * (box_.shape[1] / qf.shape[1]) * (box_.shape[2] / qf.shape[2]) * vox_ ** 3)
+                    shutil.rmtree(Of, ignore_errors=True)
             for cid, (key, box, vox, bz) in items.items():
                 q = nib.load(str(O / f"{cid}.nii.gz")).get_fdata().astype(np.uint8).transpose(2, 1, 0)
                 p = ndi.zoom(q, [a / b for a, b in zip(box.shape, q.shape)], order=0)[: box.shape[0], : box.shape[1], : box.shape[2]]
@@ -80,6 +90,9 @@ def main(cfg, out):
                 rec = {"key": key, "voxel_um": vox, "box_shape": list(box.shape), "brain_vox": int(m.sum()), "brain_um3": float(m.sum() * vox ** 3),
                        "n_components": ncomp, "largest_frac": round(lfrac, 4), "touches_edge": edge, "box_frac": round(float(m.mean()), 4), "folds": folds,
                        "box_prefix": bpre_of[key]}
+                if cid in fold_vol:
+                    fv = np.array(list(fold_vol[cid].values()))
+                    rec["fold_um3"] = fold_vol[cid]; rec["fold_cv"] = round(float(fv.std() / fv.mean()), 4) if fv.mean() > 0 else None
                 if ref_of.get(key):  # agreement with the agent-approved reference mask
                     try:
                         rm = np.load(io.BytesIO(get(ref_of[key] + key + ".npz")))["mask"].astype(bool)
