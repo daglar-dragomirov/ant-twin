@@ -5,7 +5,7 @@ hit wins) touches one or more faces of its box, each touching face is moved outw
 that axis, clipped to the true stack size (meta/true_pages.json), and the box is re-cut from the full-res stack into
 cache/boxes_grow/<key>.npz (box, box_zyx, voxel_um, grown_faces). Uncompressed stacks: HTTP Range crop; compressed:
 whole-file download. Tiny-ant end keys (key@A/@B) use the base key's stack.
-Config: reviews_unchanged_only [files], reviews [files], box_prefixes, mask_prefixes, true_pages_key, specimens_run, prefix, grow_frac, workers, max_box_mb.
+Config: key_suffix (appended to the output box key, e.g. '@G'), reviews_unchanged_only [files], reviews [files], box_prefixes, mask_prefixes, true_pages_key, specimens_run, prefix, grow_frac, workers, max_box_mb.
 Outputs: boxes_index.jsonl, summary.json.
 """
 import io, json, time, tempfile, os, shutil, pathlib, urllib.request, collections, concurrent.futures as cf
@@ -45,7 +45,8 @@ def main(cfg, out):
     g = float(cfg.get("grow_frac", 0.5))
 
     def one(key):
-        if key in have: return {"key": key, "status": "cached"}
+        out_key = key + cfg.get("key_suffix", "")
+        if out_key in have: return {"key": out_key, "status": "cached"}
         bp = next((p for p in cfg["box_prefixes"] if key in listing[p]), None); mp = next((p for p in cfg["mask_prefixes"] if key in listing[p]), None)
         if bp is None or mp is None: return {"key": key, "status": "no_box_or_mask"}
         base = key.split("@")[0]
@@ -82,8 +83,8 @@ def main(cfg, out):
                     if tmp.exists(): os.remove(tmp)
                 how = "full_file"
             buf = io.BytesIO(); np.savez_compressed(buf, box=box, box_zyx=np.array([z0, z1, y0, y1, x0, x1]), voxel_um=vox, grown_faces=np.array(tch))
-            c.put_object(Bucket=r2.BUCKET, Key=pre + key + ".npz", Body=buf.getvalue())
-            return {"key": key, "status": "grown", "faces": tch, "box_zyx": [z0, z1, y0, y1, x0, x1], "fetch": how, "src_box": bp, "src_mask": mp, "sec": round(time.time() - t0, 1)}
+            c.put_object(Bucket=r2.BUCKET, Key=pre + out_key + ".npz", Body=buf.getvalue())
+            return {"key": out_key, "status": "grown", "faces": tch, "box_zyx": [z0, z1, y0, y1, x0, x1], "fetch": how, "src_box": bp, "src_mask": mp, "sec": round(time.time() - t0, 1)}
         except Exception as ex:
             return {"key": key, "status": "error", "error": repr(ex)[:200]}
 
