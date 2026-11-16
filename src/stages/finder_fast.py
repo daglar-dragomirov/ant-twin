@@ -5,7 +5,7 @@ loaded once; each cached low-res stack is cropped to the specimen, normalised as
 to the plan spacing with trilinear interpolation on the GPU, predicted with the sliding window (no mirroring); the
 largest predicted component's bbox is converted to low-res and full-res coordinates arithmetically.
 Config: specimens_run, model_run, dataset_id, dataset_name, configuration, fold, trainer, margin_frac, crop_margin,
-        cache_prefix, skip_runs, shard, workdir, qc_every.
+        cache_prefix, skip_runs, shard, workdir, qc_every, castes (default ["worker"]), require_colony (default true).
 Outputs: finder.jsonl (same fields as finder_predict: key, status, box_zyx, lowres_bbox, candidates, ...), qc/, summary.json.
 """
 import io, os, json, time, pathlib
@@ -57,7 +57,8 @@ def main(cfg, out):
     lo_i, hi_i, mu_i, sd_i = ip["percentile_00_5"], ip["percentile_99_5"], ip["mean"], max(ip["std"], 1e-8)
     print("transpose_forward", tf, "target spacing (zyx)", tsp.tolist(), "intensity", lo_i, hi_i, mu_i, sd_i, flush=True)
     d = pd.read_csv(io.BytesIO(get(f"ant-twin/runs/{cfg['specimens_run']}/outputs/specimens.csv")))
-    d = d[(d.caste == "worker") & d.colony_any.notna() & d.url_full.notna()]
+    d = d[d.caste.isin(cfg.get("castes", ["worker"])) & d.url_full.notna()]
+    if cfg.get("require_colony", True): d = d[d.colony_any.notna()]
     recs = d.to_dict("records"); si, sn = cfg.get("shard", [0, 1]); recs = recs[si::sn]
     vf = cfg.get("voxel_filter")  # {"mode": "only"|"exclude", "voxels": [6.11]}: split slow (upsampled) scans to another pod
     if vf:
