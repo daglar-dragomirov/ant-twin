@@ -5,7 +5,8 @@ loaded once; each cached low-res stack is cropped to the specimen, normalised as
 to the plan spacing with trilinear interpolation on the GPU, predicted with the sliding window (no mirroring); the
 largest predicted component's bbox is converted to low-res and full-res coordinates arithmetically.
 Config: specimens_run, model_run, dataset_id, dataset_name, configuration, fold, trainer, margin_frac, crop_margin,
-        cache_prefix, skip_runs, shard, workdir, qc_every, castes (default ["worker"]), require_colony (default true).
+        cache_prefix, skip_runs, shard, workdir, qc_every, ends_mode (+ end_frac: per end of the PCA long axis the largest
+        component outside the top 3, rows <key>@E1/@E2), castes (default ["worker"]), require_colony (default true).
 Outputs: finder.jsonl (same fields as finder_predict: key, status, box_zyx, lowres_bbox, candidates, ...), qc/, summary.json.
 """
 import io, os, json, time, pathlib
@@ -126,6 +127,26 @@ def main(cfg, out):
                 zz, yy, xx = np.nonzero(mask)
                 lo = np.array([zz.min(), yy.min(), xx.min()]) * scale + off; hi = (np.array([zz.max(), yy.max(), xx.max()]) + 1) * scale + off
                 return lo, hi
+            if cfg.get("ends_mode"):  # rescue: per end of the long axis, the largest component not among the top 3
+                from stages.tiny_ends import specimen_mask
+                m = specimen_mask(v); pts = np.argwhere(m)
+                if len(pts) < 100:
+                    fo.write(json.dumps({**rec, "key": key + "@E1", "status": "no_specimen"}) + chr(10)); fo.flush(); continue
+                ph = pts * sp1; ctr = ph.mean(0); u = np.linalg.svd(ph - ctr, full_matrices=False)[2][0]
+                proj = (ph - ctr) @ u; lo_p, hi_p = proj.min(), proj.max(); L = hi_p - lo_p; ef = cfg.get("end_frac", 0.35)
+                cents = ndi.center_of_mass(seg, lab, range(1, n + 1))
+                pj = np.array([((np.array(cc) * scale + off) * sp1 - ctr) @ u for cc in cents])
+                skip = set(int(x) for x in order[:3]); lim = np.array([P, H, Wd]); wrote = 0
+                for tag, sel in (("E1", pj <= lo_p + ef * L), ("E2", pj >= hi_p - ef * L)):
+                    idx = [int(i_) for i_ in order if sel[i_] and int(i_) not in skip]
+                    if not idx: continue
+                    lo, hi = bbox_lowres(lab == idx[0] + 1)
+                    c_ = (lo + hi) / 2 * f; half = (hi - lo) / 2 * f * (1 + cfg.get("margin_frac", 0.6))
+                    z0, y0, x0 = np.maximum(np.floor(c_ - half), 0).astype(int); z1, y1, x1 = np.minimum(np.ceil(c_ + half), lim).astype(int)
+                    fo.write(json.dumps({**rec, "key": f"{key}@{tag}", "base_key": key, "status": "ok", "lowres_bbox": [int(a) for a in (*lo, *hi)],
+                                         "box_zyx": [int(z0), int(z1), int(y0), int(y1), int(x0), int(x1)], "cand_vox": int(sizes[idx[0]]),
+                                         "cand_rank": int(list(order).index(idx[0])) + 1, "source": "finder_ends"}) + chr(10)); wrote += 1
+                fo.flush(); n_ok += wrote; print(key, "ends candidates", wrote, flush=True); continue
             cand = []
             for ci in order[:3]:
                 l_, h_ = bbox_lowres(lab == ci + 1); cand.append({"vox": int(sizes[ci]), "lowres_bbox": [int(a) for a in (*l_, *h_)]})
