@@ -1,1 +1,1 @@
-{"stage": "true_pages", "specimens_run": "20261113-153618_specimen-table-v2-fix-species-name-joins_DESKTOP-7Q7S0N3", "prefix": "ant-twin/cache/lowres/", "workers": 8, "meta_key": "ant-twin/meta/true_pages.json"}
+{"stage": "true_pages", "specimens_run": "20261113-153618_specimen-table-v2-fix-species-name-joins_DESKTOP-7Q7S0N3", "prefix": "ant-twin/cache/lowres/", "workers": 8, "keys_key": "ant-twin/meta/b3_queen_keys.json", "meta_key": "ant-twin/meta/true_pages_queens.json", "merge_base_key": "ant-twin/meta/true_pages.json", "merged_key": "ant-twin/meta/true_pages_all.json"}

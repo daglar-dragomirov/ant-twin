@@ -5,7 +5,9 @@ deflate-compressed stacks the per-page size varies and the estimate is wrong by 
 exactly 1 or 2). Every low-res -> full-res z mapping inherited the error.
 How: tifffile writes ImageDescription '{"shape": [P, H, W]}' into IFD0, so one small HTTP range read per stack gives the
 exact shape. Fallback (no description): walk the IFD chain counting pages (2 small reads per page).
-Config: specimens_run, prefix (low-res cache), workers, meta_key.
+Config: specimens_run, prefix (low-res cache), workers, meta_key; keys_key (optional R2 JSON key list: only these cached
+        stacks); merge_base_key + merged_key (optional: write base table updated with this run's rows to merged_key;
+        the base table itself is never overwritten).
 Outputs: true_pages.jsonl, summary.json; R2 meta_key = {key: {pages, pages_est, n_lowres, ratio, compression, H, W, src}}.
 """
 import io, json, struct, time, collections, concurrent.futures as cf
@@ -32,6 +34,10 @@ def main(cfg, out):
     d = d[d.url_full.notna()]
     url = {f"{r['folder']}__{vial_code(r['vial'])}": r["url_full"] for r in d.to_dict("records")}
     keys = sorted(k[len(pre):-4] for k in r2.list_keys(c, r2.BUCKET, pre))
+    if cfg.get("keys_key"):
+        want = json.loads(c.get_object(Bucket=r2.BUCKET, Key=cfg["keys_key"])["Body"].read())
+        print(f"key list {cfg['keys_key']}: {len(want)} keys, {len(set(want) - set(keys))} not in the low-res cache", flush=True)
+        keys = sorted(set(keys) & set(want))
     print(f"cached stacks {len(keys)}, with url {sum(k in url for k in keys)}", flush=True)
 
     def one(key):
@@ -63,6 +69,13 @@ def main(cfg, out):
     ok = [r for r in rows if r["status"] == "ok"]
     table = {r["key"]: {k: r[k] for k in ("pages", "pages_est", "n_lowres", "ratio", "compression", "H", "W", "src")} for r in ok}
     c.put_object(Bucket=r2.BUCKET, Key=cfg.get("meta_key", "ant-twin/meta/true_pages.json"), Body=json.dumps(table).encode())
+    if cfg.get("merged_key"):
+        base = json.loads(c.get_object(Bucket=r2.BUCKET, Key=cfg["merge_base_key"])["Body"].read())
+        clash = sorted(k for k in table if k in base and base[k]["pages"] != table[k]["pages"])
+        merged = {**base, **table}
+        c.put_object(Bucket=r2.BUCKET, Key=cfg["merged_key"], Body=json.dumps(merged).encode())
+        (out / "merge.json").write_text(json.dumps({"base": len(base), "new": len(table), "merged": len(merged), "pages_clash": clash}, indent=1))
+        print(f"merged {len(base)} + {len(table)} -> {len(merged)} into {cfg['merged_key']}; page clashes {len(clash)}", flush=True)
     summ = {"n": len(rows), "status": dict(collections.Counter(r["status"] for r in rows)),
             "src": dict(collections.Counter(r["src"] for r in ok)),
             "compression": dict(collections.Counter(r["compression"] for r in ok)),
