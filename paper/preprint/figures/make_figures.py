@@ -119,10 +119,10 @@ def draw_schematic(ax):
     w, h, y1 = 14.6, 15.5, 26.5
     xs = [0.5, 17.2, 33.9, 50.6, 67.3, 84.0]
     items = [("AntScan scans", "synchrotron (KIT)\n818 colony workers\n352 species with\nknown colony size"),
-             ("Head finder", "811 low-res stacks\nnnU-Net 3d\nlocates the brain"),
-             ("Head box", "full-resolution\ncrop around\nthe brain"),
+             ("Head finder", "811 low-res stacks\nnnU-Net 3d\nlocates the head"),
+             ("Head box", "full-resolution\ncrop around\nthe head"),
              ("Segmentation", "nnU-Net 2d\n5-fold ensemble;\nheld-out Dice\n0.962-0.973"),
-             ("Vision-agent QC", "every mask: box\non head, mask good,\nbrain fully in box"),
+             ("Vision-agent QC", "every mask:\nbox on head,\nmask good, brain\nfully in box"),
              ("Brain table", "689 workers\n325 species\nfrozen, SHA-256\nICC(1) = 0.90")]
     for x, (t, b) in zip(xs, items):
         box(x, y1, w, h, t, b)
@@ -133,7 +133,7 @@ def draw_schematic(ax):
     # row 2: covariates and model
     y2, h2 = 1.0, 15.5
     box(0.5, y2, 17.5, h2, "Body volume", "S1 of Matte et al. 2025\nwhere measured, else\nour body masks\n(ratio to S1: 1.04)", fc="#fbfbfa", ec=MUTED)
-    box(20.0, y2, 17.5, h2, "Soft tissue (R3)", "body - cuticle\nS1 (154 species) +\nowners' program on\n141 workers (81 spp.)", fc="#fef4ef", ec=ORANGE)
+    box(20.0, y2, 17.5, h2, "Soft tissue (R3)", "body − cuticle\nS1 (154 species) +\nowners' program on\n141 workers (81 spp.)", fc="#fef4ef", ec=ORANGE)
     box(39.5, y2, 17.5, h2, "Colony size", "species means from\nMatte et al. 2025 S3;\nBell-Roberts et al.\n2024 as fallback", fc="#fbfbfa", ec=MUTED)
     box(59.0, y2, 17.5, h2, "Phylogeny", "Economo et al. 2018\nMCC + posterior trees;\nBorowiec et al. 2025\n(check R2)", fc="#fbfbfa", ec=MUTED)
     box(80.5, y2, 19.0, h2, "Preregistered PGLS", "log10 brain ~ log10 body\n+ log10 colony + stain\n+ scan step\n270 species", fc="#eef8f3", ec=AQUA)
@@ -191,8 +191,8 @@ def fig2():
     xs = np.linspace(d.log10_body.min(), d.log10_body.max(), 50)
     b1 = haller["slope"]; c0 = adj.mean() - b1 * d.log10_body.mean()
     a.plot(xs, c0 + b1 * xs, color=INK, lw=1.2, zorder=4)
-    a.text(0.03, 0.97, f"PGLS slope {b1:.3f} [{haller['ci_low']:.3f}; {haller['ci_high']:.3f}]\n"
-                       f"λ = {haller['lambda']:.2f}, R² (OLS) = {haller['r2_ols_same_terms']:.2f}, n = {haller['n_species']} species",
+    a.text(0.03, 0.97, f"slope {b1:.3f} (95% CI {haller['ci_low']:.3f}–{haller['ci_high']:.3f})\n"
+                       f"n = {haller['n_species']} species",
            transform=a.transAxes, va="top", fontsize=6.5)
     a.set_xlabel("log10 body volume (mm³)"); a.set_ylabel("log10 brain volume (mm³), adjusted")
     a.set_ylim(adj.min() - 0.15, adj.max() + 0.45)
@@ -213,9 +213,8 @@ def fig2():
     a.fill_between(xg, (b2 - q * m["se"]) * (xg - xm), (b2 + q * m["se"]) * (xg - xm), color=BLUE, alpha=0.18, lw=0, zorder=2)
     a.plot(xg, b2 * (xg - xm), color=BLUE, lw=1.6, zorder=4)
     a.axhline(0, color=INK2, lw=0.5, ls=(0, (3, 3)), zorder=1)
-    a.text(0.03, 0.97, f"β₂ = +{b2:.3f} [{m['ci_low']:.3f}; {m['ci_high']:.3f}], p = {m['p']:.4f}\n"
-                       f"≈ +{100 * (10 ** b2 - 1):.1f}% brain volume per tenfold colony size\n"
-                       f"MCC tree, λ = {m['lambda']:.2f}, n = {m['n']} species → support H2",
+    a.text(0.03, 0.97, f"β₂ = +{b2:.3f} (95% CI {m['ci_low']:.3f}–{m['ci_high']:.3f})\n"
+                       f"n = {m['n']} species",
            transform=a.transAxes, va="top", fontsize=6.5)
     a.set_xlabel("log10 colony size (workers)"); a.set_ylabel("partial residual, log10 brain volume")
     a.set_ylim(pr.min() - 0.08, pr.max() + 0.32)
@@ -248,7 +247,7 @@ def fig3_rows():
     add(G, "Measurement-error model, MCMCglmm", mc["mean"], mc["q025"], mc["q975"], np.nan, np.nan, "442 / 270",
         outcome=classify(mc["mean"], mc["q025"], mc["q975"], -1, 1))
     G = "Phylogeny"
-    add_pool(G, "R1 FBD trees (6, primary run)", R["R1"]["result"], 270)
+    add_pool(G, "R1 FBD trees (6 trees, preregistered)", R["R1"]["result"], 270)
     s200 = supp["R1_fbd_200"]
     add_pool(G, "R1 FBD trees (all 200; post hoc check)", s200, 270, prereg=False)
     k = [k for k in r2 if k.startswith("129-158Ma_independent") and "272" in k and "| 100 resamples" in k][0]
@@ -363,9 +362,11 @@ def fig4():
     x, yv = soft.log10_colony_any.to_numpy(), 100 * soft.cuticle_frac_same.to_numpy()
     bb = np.polyfit(x, yv, 1); xg = np.linspace(x.min(), x.max(), 20)
     a.plot(xg, np.polyval(bb, xg), color=INK, lw=1.0, zorder=4)
-    a.text(0.97, 0.97, f"r(log10 colony, log10 soft/body) = +{lf['all_235']['corr_colony_log_soft_over_body']:.2f}\n"
-                       f"n = {len(soft)} species; line: OLS, descriptive",
-           transform=a.transAxes, ha="right", va="top", fontsize=5.9)
+    a.text(0.97, 0.97, f"r = +{lf['all_235']['corr_colony_log_soft_over_body']:.2f}\n"
+                       f"(log10 colony vs\nlog10 soft/body)\n"
+                       f"n = {len(soft)} species\nline: OLS, descriptive",
+           transform=a.transAxes, ha="right", va="top", fontsize=5.9, linespacing=1.15,
+           bbox=dict(boxstyle="round,pad=0.25", fc="white", ec="none", alpha=0.85))
     a.set_xlabel("log10 colony size (workers)"); a.set_ylabel("cuticle / body volume (%)")
     a.set_ylim(0, max(50, float(np.nanmax(yv)) + 11))
     a.legend(loc="upper center", bbox_to_anchor=(0.5, -0.24), fontsize=5.8, markerscale=1.3)

@@ -1,4 +1,4 @@
-\begin{thebibliography}{33}
+\begin{thebibliography}{35}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -239,6 +239,20 @@ C.~D. Perl, Z.~N. Coto, R.~Johnson, M.~Johnson, L.~Graber, J.~Haas, J.~S.
 \newblock \emph{Proceedings of the Royal Society B}, 293\penalty0
   (2081):\penalty0 20260387, 2026.
 \newblock \doi{10.1098/rspb.2026.0387}.
+
+\bibitem[Pinheiro et~al.(2026)Pinheiro, Bates, and {R Core
+  Team}]{pinheiro2026nlme}
+Jos{\'e} Pinheiro, Douglas Bates, and {R Core Team}.
+\newblock \emph{{nlme: Linear and Nonlinear Mixed Effects Models}}, 2026.
+\newblock URL \url{https://CRAN.R-project.org/package=nlme}.
+\newblock R package version 3.1-171.
+
+\bibitem[{R Core Team}(2026)]{rcore2026}
+{R Core Team}.
+\newblock \emph{{R: A Language and Environment for Statistical Computing}}.
+\newblock R Foundation for Statistical Computing, Vienna, Austria, 2026.
+\newblock URL \url{https://www.R-project.org/}.
+\newblock Version 4.6.2.
 
 \bibitem[Riveros et~al.(2012)Riveros, Seid, and Wcislo]{riveros2012}
 A.~J. Riveros, M.~A. Seid, and W.~T. Wcislo.

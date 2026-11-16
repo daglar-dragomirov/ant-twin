@@ -103,7 +103,7 @@ real AntScan scans; d--e show its held-out accuracy.
 \textbf{(a)}~One specimen through brain localisation (\emph{Labidus praedator}, Dorylinae, specimen
 \path{5x__22-04}). Left: maximum-intensity projections (MIP) of the AntScan low-resolution copy that the head finder reads
 (here \qty{4.9}{\um} between slices, \qty{9.4}{\um} in plane), with the full-resolution head box (blue) at the
-coordinates stored with the box; for this specimen the box had been regrown (Section~\ref{sec:brain}). The ant hangs
+coordinates of the box; for this specimen the box had been regrown (Section~\ref{sec:brain}). The ant hangs
 head-down in the vial. Right: middle slice of the head box at full resolution (\qty{2.44}{\um} voxels).
 \textbf{(b)}~The brain mask of the same specimen (segmentation ensemble, as frozen) as a surface inside its head box. The
 three orthogonal box slices through the mask centroid are drawn on the back walls with the mask outline. Orthographic
@@ -111,8 +111,8 @@ view; for display only, the surface was computed on the mask downsampled twofold
 along the front edge of the box floor.
 \textbf{(c)}~Brain masks of eight specimens from the frozen brain table, shown without edits. Each tile shows the scan
 slice with the largest brain cross-section in the full-resolution head box, with the mask outline (orange) and a scale
-bar; the crop is centred on the mask, and white areas lie outside the stored box. Titles give species, subfamily and
-body volume (owner-measured or from our body masks; Section~\ref{sec:body}); the specimen key and voxel size are
+bar; the crop is centred on the mask, and white areas lie outside the box. Titles give species, subfamily and
+body volume (owner-measured or from our body masks; Section~\ref{sec:body}); the specimen code and voxel size are
 printed in each tile. \emph{Selection rule:} the pool was
 the $462$ main-analysis workers with a body volume, split into octiles of $\lten$ body volume. From the smallest
 octile up, one specimen was drawn at random (NumPy \texttt{default\_rng}, seed 20261116) among pool workers of
@@ -471,10 +471,10 @@ $442$ workers, and $154$ species are represented by a single worker. Brain volum
 \caption[Brain--body allometry and the colony-size effect]{\textbf{Brain--body allometry and the colony-size effect.}
 \textbf{(a)}~Species-mean $\lten$ brain volume against $\lten$ body volume for $270$ species. Brain volume is adjusted
 for stain and scan step with the coefficients of the Haller's-rule gate model. Colour shows $\lten$ colony size. The
-line has the PGLS slope ($0.489$) and is drawn through the species means.
+line has the PGLS slope ($0.489$; $\lambda = 0.69$; OLS $R^2 = 0.85$) and is drawn through the species means.
 \textbf{(b)}~Partial residuals (component + residual) of $\lten$ brain volume against $\lten$ colony size from the
-preregistered PGLS fit~\eqref{eq:pgls} on the MCC tree. The line shows $\beta_2 = +0.035$; the band is its $95\%$
-confidence interval.}
+preregistered PGLS fit~\eqref{eq:pgls} on the MCC tree ($\lambda = 0.72$). The line shows $\beta_2 = +0.035$
+($p = 0.0002$), about $8.4\%$ more brain volume per tenfold colony size; the band is its $95\%$ confidence interval.}
 \label{fig:allometry}
 \end{figure}
 

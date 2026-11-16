@@ -26,18 +26,22 @@ the same steps on real scans.}
 \caption[Segmentation model against human labels on held-out Toulkeridou cases]{\textbf{Segmentation model against
 human labels on held-out Toulkeridou cases.} Four of the $117$ human-labelled stacks of \citet{toulkeridou2023} that were held out in
 cross-validation. \emph{Selection rule:} the cases nearest the 10th, 50th and 90th percentile of per-case held-out
-Dice (a--c) and the case with the lowest Dice (d--e). Each case was predicted by the segmentation model of the fold
-whose validation set contains it; folds were split by species, so the species was not in training. Predictions were re-run
-on CPU from the stored checkpoints with the nnU-Net validation settings (2d, mirroring, tile step $0.5$). Blue: human
+Dice (a--c) and the case with the lowest Dice (d--f). Each case was predicted by the segmentation model of the fold
+whose validation set contains it; folds were split by species, so the species was not in training. Blue: human
 label; orange, dashed: segmentation model of the held-out fold.
-\textbf{(a--d)}~The slice with the largest labelled area. Titles give the held-out Dice and volume error stored by the
-training run (full volume); tiles give the Dice of the shown slice.
-\textbf{(e)}~For the lowest case, the slice with the largest label--prediction disagreement in the full-volume
-prediction. 	extbf{(f)}~The same slice with the human label moved by the rigid offset described below.
-Full volumes were re-predicted for two cases and reproduce the stored values (Dice $0.9806$ and $0.9806$ for
-\texttt{TK\_057}, $0.4951$ and $0.4952$ for \texttt{TK\_063}). In the lowest case, the label in the deposited training archive is offset from its image by about $115 \times 27$~pixels on every slice; moved back by this rigid shift, it outlines the brain (panel f; full-volume Dice $0.812$ instead of $0.495$). The shifted label is still about $1.4$ times larger than the predicted brain, so the stored label was probably drawn on a differently cropped version of the image. A check of all $117$ held-out reference labels (full re-prediction with the held-out fold model; rigid-offset rule fixed before the run: shift $\geq 5$~px, Dice gain $\geq 0.10$, consistent across slices) flagged only this stack. We kept it in Figure~\ref{fig:scan}d--e and Table~\ref{tab:S2}; without it the median Dice is unchanged. Across the $117$ cases the median Dice
-was $0.969$, and $3$ cases were below $0.90$. The dataset authors cropped and resampled the images to
-$520 \times 520$ pixels per slice, so no physical scale is given.}
+\textbf{(a--d)}~The slice with the largest labelled area. Titles give the held-out Dice and volume error of the full
+volume; tiles give the Dice of the shown slice.
+\textbf{(e)}~For the lowest case, the slice with the largest label--prediction disagreement.
+\textbf{(f)}~The same slice with the human label moved by the rigid offset described below.
+In the lowest case, the label in the deposited training archive is offset from its image by about
+$115 \times 27$~pixels on every slice; moved back by this rigid shift, it outlines the brain (panel f; full-volume
+Dice $0.812$ instead of $0.495$). The shifted label is still about $1.4$ times larger than the predicted brain, so the
+deposited label was probably drawn on a differently cropped version of the image. A check of all $117$ held-out
+reference labels (rigid-offset rule fixed before the check: shift $\geq 5$~px, Dice gain $\geq 0.10$, consistent
+across slices) flagged only this stack. We kept it in Figure~\ref{fig:scan}d--e and Table~\ref{tab:S2}; without it
+the median Dice is unchanged. Across the $117$ cases the median Dice was $0.969$, and $3$ cases were below $0.90$.
+The dataset authors cropped and resampled the images to $520 \times 520$ pixels per slice, so no physical scale is
+given.}
 \label{fig:tk}
 \end{figure}
 
