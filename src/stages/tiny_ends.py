@@ -5,7 +5,8 @@ body_volume v6), long axis by PCA of the mask voxels (physical units), and for e
 voxels whose projection lies in the outer `end_frac` of the length. Each end becomes a full-res box candidate written
 as a finder.jsonl-compatible row with key "<key>@A" / "<key>@B"; boxes_v3 and seg_predict then process them, and the
 end with a compact brain is chosen after agent QC.
-Config: specimens_run, targets_from_runs (finder runs whose status==no_brain keys are targets, minus keys rescued ok in
+Config: targets_key + finder_runs (explicit key list; rows of the finder runs supply the specimen fields), true_pages_key
+        (exact page count), or (older) specimens_run, targets_from_runs (finder runs whose status==no_brain keys are targets, minus keys rescued ok in
         rescue_runs), rescue_runs, cache_prefix, end_frac, margin_frac.
 Outputs: finder.jsonl (two rows per specimen), summary.json.
 """
@@ -35,10 +36,17 @@ def main(cfg, out):
     import pandas as pd
     c = r2.client(); get = lambda k: c.get_object(Bucket=r2.BUCKET, Key=k)["Body"].read()
     rows = lambda run: [json.loads(l) for l in get(f"ant-twin/runs/{run}/outputs/finder.jsonl").decode().splitlines() if l.strip()]
-    targets = {r["key"]: r for run in cfg["targets_from_runs"] for r in rows(run) if r.get("status") == "no_brain"}
-    for run in cfg.get("rescue_runs", []):
-        for r in rows(run):
-            if r.get("status") == "ok": targets.pop(r["key"], None)
+    if cfg.get("targets_key"):  # explicit key list; finder rows (any status) of finder_runs give the specimen fields
+        want = set(json.loads(get(cfg["targets_key"]))); targets = {}
+        for run in cfg.get("finder_runs", []):
+            for r in rows(run):
+                if r["key"] in want: targets[r["key"]] = r
+    else:
+        targets = {r["key"]: r for run in cfg["targets_from_runs"] for r in rows(run) if r.get("status") == "no_brain"}
+        for run in cfg.get("rescue_runs", []):
+            for r in rows(run):
+                if r.get("status") == "ok": targets.pop(r["key"], None)
+    TP = json.loads(get(cfg["true_pages_key"])) if cfg.get("true_pages_key") else {}
     print(f"targets: {len(targets)}", flush=True)
     ef, mf = cfg.get("end_frac", 0.35), cfg.get("margin_frac", 0.15)
     with open(out / "finder.jsonl", "w", encoding="utf-8") as fo:
@@ -48,6 +56,9 @@ def main(cfg, out):
             except Exception:
                 print("not cached", key); continue
             v, nlow, P, H, W = z["img"], int(z["n_lowres"]), int(z["pages"]), int(z["H"]), int(z["W"])
+            if TP:
+                if key not in TP: print("no true pages", key); continue
+                P = int(TP[key]["pages"])  # cached page estimate is wrong for compressed stacks
             f = np.array([P / nlow, H / v.shape[1], W / v.shape[2]]); sp = float(r["voxel_um"]) * f
             m = specimen_mask(v); pts = np.argwhere(m)
             if len(pts) < 100: fo.write(json.dumps({**r, "key": key + "@A", "status": "no_specimen"}) + "\n"); continue
