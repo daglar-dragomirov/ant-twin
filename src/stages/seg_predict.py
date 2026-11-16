@@ -59,17 +59,37 @@ def main(cfg, out):
     todo = [k for k in keys if k not in done]
     if cfg.get("reverse"): todo = todo[::-1]  # second GPU from the other end; print(f"boxes {len(keys)}, already segmented {len(done)}, to do {len(todo)}", flush=True)
     (out / "qc").mkdir(exist_ok=True); t = cfg["target_px"]; B = cfg.get("batch", 12)
+    group_of = {k: "all" for k in todo}
+    if cfg.get("oof"):  # D4: a scan of a species in the training data is predicted only by the fold that held the species out
+        import pandas as pd
+        ov = cfg["oof"]; cases = json.loads(get(f"ant-twin/runs/{ov['run']}/outputs/cases.json"))
+        splits = json.loads(get(f"ant-twin/runs/{ov['run']}/outputs/splits_final.json"))
+        fold_of_case = {cs: fi for fi, sp in enumerate(splits) for cs in sp["val"]}
+        fold_of_species = {}
+        for cs, (src, spn) in cases.items():
+            if src in ("AS", "AS2") and cs in fold_of_case: fold_of_species[spn] = str(fold_of_case[cs])
+        d = pd.read_csv(io.BytesIO(get(f"ant-twin/runs/{cfg['specimens_run']}/outputs/specimens.csv")))
+        vc_ = lambda v: (lambda q: "%02d-%02d" % (int(q[0]), int(q[1])) if len(q) == 2 and all(x.isdigit() for x in q) else str(v))(str(v).split("-"))
+        name_of = {f"{r.folder}__{vc_(r.vial)}": r.name for r in d.itertuples()}
+        group_of = {k: fold_of_species.get(name_of.get(k.split("@")[0]), "all") for k in todo}
+        print("oof groups", {g: sum(1 for v in group_of.values() if v == g) for g in sorted(set(group_of.values()))}, flush=True)
+    batches = []
+    for g in sorted(set(group_of.values())):
+        ks_ = [k for k in todo if group_of[k] == g]
+        batches += [(g, ks_[i:i + B]) for i in range(0, len(ks_), B)]
     with open(out / "brains.jsonl", "w", encoding="utf-8") as fo:
-        for b0 in range(0, len(todo), B):
+        b0 = 0
+        for grp, chunk in batches:
+            pred_folds = folds if grp == "all" else [grp]
             t0 = time.time(); I, O = W / "seg_in", W / "seg_out"
             shutil.rmtree(I, ignore_errors=True); shutil.rmtree(O, ignore_errors=True); I.mkdir(parents=True); O.mkdir(parents=True)
             items = {}
-            for j, key in enumerate(todo[b0: b0 + B]):
+            for j, key in enumerate(chunk):
                 z = np.load(io.BytesIO(get(bpre_of[key] + key + ".npz"))); box = z["box"]; vox = float(z["voxel_um"])
                 s = t / max(box.shape[1], box.shape[2]); img = ndi.zoom(box, (1, s, s), order=1)
                 cid = f"S_{b0 + j:04d}"; items[cid] = (key, box, vox, z["box_zyx"])
                 nib.save(nib.Nifti1Image(np.ascontiguousarray(img.transpose(2, 1, 0)), np.eye(4)), I / f"{cid}_0000.nii.gz")
-            sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", *folds, "-tr", tr, "--disable_progress_bar"] + (["--disable_tta"] if cfg.get("disable_tta") else []), env)
+            sh(["nnUNetv2_predict", "-i", str(I), "-o", str(O), "-d", str(did), "-c", conf, "-f", *pred_folds, "-tr", tr, "--disable_progress_bar"] + (["--disable_tta"] if cfg.get("disable_tta") else []), env)
             fold_vol = {}
             if cfg.get("fold_volumes"):  # autoflag "fold CV > 15 %": each fold alone, largest component, volume scaled back to the box grid
                 for fo_ in folds:
@@ -88,7 +108,7 @@ def main(cfg, out):
                 buf = io.BytesIO(); np.savez_compressed(buf, mask=m, box_zyx=bz, voxel_um=vox); c.put_object(Bucket=r2.BUCKET, Key=mpre + key + ".npz", Body=buf.getvalue())
                 qc_jpg(box, m, out / "qc" / f"{key}.jpg")
                 rec = {"key": key, "voxel_um": vox, "box_shape": list(box.shape), "brain_vox": int(m.sum()), "brain_um3": float(m.sum() * vox ** 3),
-                       "n_components": ncomp, "largest_frac": round(lfrac, 4), "touches_edge": edge, "box_frac": round(float(m.mean()), 4), "folds": folds,
+                       "n_components": ncomp, "largest_frac": round(lfrac, 4), "touches_edge": edge, "box_frac": round(float(m.mean()), 4), "folds": pred_folds, "oof_group": grp,
                        "box_prefix": bpre_of[key]}
                 if cid in fold_vol:
                     fv = np.array(list(fold_vol[cid].values()))
@@ -100,7 +120,7 @@ def main(cfg, out):
                             inter = int((rm & (m > 0)).sum()); rec["dice_vs_ref"] = round(2 * inter / max(int(rm.sum() + (m > 0).sum()), 1), 4); rec["vol_ratio_vs_ref"] = round(int((m > 0).sum()) / max(int(rm.sum()), 1), 4)
                     except Exception as ex_: rec["ref_error"] = repr(ex_)[:100]
                 fo.write(json.dumps(rec) + "\n"); fo.flush()
-            print(f"batch {b0}-{b0 + len(items)} in {time.time() - t0:.0f}s", flush=True)
+            print(f"batch {b0}-{b0 + len(items)} (folds {pred_folds}) in {time.time() - t0:.0f}s", flush=True); b0 += len(items)
     shutil.rmtree(W / "seg_in", ignore_errors=True); shutil.rmtree(W / "seg_out", ignore_errors=True)
     rows = [json.loads(l) for l in open(out / "brains.jsonl", encoding="utf-8")]
     summ = {"n": len(rows), "empty": sum(r["brain_vox"] == 0 for r in rows), "touch_edge": sum(r["touches_edge"] for r in rows), "folds": folds}
