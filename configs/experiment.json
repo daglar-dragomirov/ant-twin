@@ -1,1 +1,1 @@
-{"stage": "boxes_v3", "finder_runs": ["20261115-075129_finder-alt-boxes-from-2nd-3rd-finder-candidates_668c59782304"], "workers": 8, "max_box_mb": 2000, "prefix": "ant-twin/cache/boxes_v5/", "reverse": false, "shard": [0, 2]}
+{"stage": "boxes_v3", "finder_runs": ["20261116-145025_finder-queens-final-finder-on-the-143-queens-of_1907827dd6c8"], "workers": 8, "max_box_mb": 2000, "prefix": "ant-twin/cache/boxes_q1/", "reverse": false, "shard": [0, 1]}
