@@ -1,0 +1,273 @@
+\begin{thebibliography}{33}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Aiello and Wheeler(1995)]{aiello1995}
+L.~C. Aiello and P.~Wheeler.
+\newblock {The expensive-tissue hypothesis: the brain and the digestive system
+  in human and primate evolution}.
+\newblock \emph{Current Anthropology}, 36\penalty0 (2):\penalty0 199--221,
+  1995.
+\newblock \doi{10.1086/204350}.
+
+\bibitem[Bell-Roberts et~al.(2024)Bell-Roberts, Turner, Werner, Downing, Ross,
+  and West]{bellroberts2024}
+L.~Bell-Roberts, J.~F.~R. Turner, G.~D.~A. Werner, P.~A. Downing, L.~Ross, and
+  S.~A. West.
+\newblock {Larger colony sizes favoured the evolution of more worker castes in
+  ants}.
+\newblock \emph{Nature Ecology \& Evolution}, 8\penalty0 (10):\penalty0
+  1959--1971, 2024.
+\newblock \doi{10.1038/s41559-024-02512-7}.
+
+\bibitem[Borowiec et~al.(2025)Borowiec, Zhang, Neves, Ramalho, Fisher, Lucky,
+  and Moreau]{borowiec2025}
+M.~L. Borowiec, Y.~M. Zhang, K.~Neves, M.~O. Ramalho, B.~L. Fisher, A.~Lucky,
+  and C.~S. Moreau.
+\newblock {Evaluating UCE data adequacy and integrating uncertainty in a
+  comprehensive phylogeny of ants}.
+\newblock \emph{Systematic Biology}, 74\penalty0 (5):\penalty0 700--722, 2025.
+\newblock \doi{10.1093/sysbio/syaf001}.
+\newblock Data: Zenodo \doi{10.5281/zenodo.14338504}.
+
+\bibitem[Burchill and Moreau(2016)]{burchill2016}
+A.~T. Burchill and C.~S. Moreau.
+\newblock {Colony size evolution in ants: macroevolutionary trends}.
+\newblock \emph{Insectes Sociaux}, 63\penalty0 (2):\penalty0 291--298, 2016.
+\newblock \doi{10.1007/s00040-016-0465-3}.
+
+\bibitem[B{\"u}rkner(2017)]{burkner2017}
+P.-C. B{\"u}rkner.
+\newblock {brms: an R package for Bayesian multilevel models using Stan}.
+\newblock \emph{Journal of Statistical Software}, 80\penalty0 (1):\penalty0
+  1--28, 2017.
+\newblock \doi{10.18637/jss.v080.i01}.
+
+\bibitem[Carpenter et~al.(2017)Carpenter, Gelman, Hoffman, Lee,
+  et~al.]{carpenter2017}
+B.~Carpenter, A.~Gelman, M.~D. Hoffman, D.~Lee, et~al.
+\newblock {Stan: a probabilistic programming language}.
+\newblock \emph{Journal of Statistical Software}, 76\penalty0 (1), 2017.
+\newblock \doi{10.18637/jss.v076.i01}.
+
+\bibitem[Dornhaus et~al.(2012)Dornhaus, Powell, and Bengston]{dornhaus2012}
+A.~Dornhaus, S.~Powell, and S.~Bengston.
+\newblock {Group size and its effects on collective organization}.
+\newblock \emph{Annual Review of Entomology}, 57:\penalty0 123--141, 2012.
+\newblock \doi{10.1146/annurev-ento-120710-100604}.
+
+\bibitem[Dunbar(1998)]{dunbar1998}
+R.~I.~M. Dunbar.
+\newblock {The social brain hypothesis}.
+\newblock \emph{Evolutionary Anthropology}, 6\penalty0 (5):\penalty0 178--190,
+  1998.
+\newblock \doi{10.1002/(SICI)1520-6505(1998)6:5<178::AID-EVAN5>3.0.CO;2-8}.
+
+\bibitem[Economo et~al.(2018)Economo, Narula, Friedman, Weiser, and
+  Gu{\'e}nard]{economo2018}
+E.~P. Economo, N.~Narula, N.~R. Friedman, M.~D. Weiser, and B.~Gu{\'e}nard.
+\newblock {Macroecology and macroevolution of the latitudinal diversity
+  gradient in ants}.
+\newblock \emph{Nature Communications}, 9:\penalty0 1778, 2018.
+\newblock \doi{10.1038/s41467-018-04218-4}.
+\newblock Data: Dryad \doi{10.5061/dryad.g579t7k}.
+
+\bibitem[Feinerman and Traniello(2016)]{feinerman2016}
+O.~Feinerman and J.~F.~A. Traniello.
+\newblock {Social complexity, diet, and brain evolution: modeling the effects
+  of colony size, worker size, brain size, and foraging behavior on colony
+  fitness in ants}.
+\newblock \emph{Behavioral Ecology and Sociobiology}, 70\penalty0 (7):\penalty0
+  1063--1074, 2016.
+\newblock \doi{10.1007/s00265-015-2035-5}.
+
+\bibitem[Freckleton et~al.(2002)Freckleton, Harvey, and Pagel]{freckleton2002}
+R.~P. Freckleton, P.~H. Harvey, and M.~Pagel.
+\newblock {Phylogenetic analysis and comparative data: a test and review of
+  evidence}.
+\newblock \emph{The American Naturalist}, 160\penalty0 (6):\penalty0 712--726,
+  2002.
+\newblock \doi{10.1086/343873}.
+
+\bibitem[Godfrey and Gronenberg(2020)]{godfrey2020}
+R.~K. Godfrey and W.~Gronenberg.
+\newblock {Linking colony size with foraging behavior and brain investment in
+  odorous ants (Formicidae: Dolichoderinae)}.
+\newblock \emph{Brain, Behavior and Evolution}, 95\penalty0 (1):\penalty0
+  15--24, 2020.
+\newblock \doi{10.1159/000504643}.
+
+\bibitem[Gronenberg and Riveros(2009)]{gronenberg2009}
+W.~Gronenberg and A.~J. Riveros.
+\newblock {Social brains and behavior: past and present}.
+\newblock In J.~Gadau and J.~Fewell, editors, \emph{{Organization of Insect
+  Societies: From Genome to Sociocomplexity}}, pages 377--401. Harvard
+  University Press, 2009.
+\newblock \doi{10.4159/9780674272842-021}.
+
+\bibitem[Hadfield(2010)]{hadfield2010}
+J.~D. Hadfield.
+\newblock {MCMC methods for multi-response generalized linear mixed models: the
+  MCMCglmm R package}.
+\newblock \emph{Journal of Statistical Software}, 33\penalty0 (2):\penalty0
+  1--22, 2010.
+\newblock \doi{10.18637/jss.v033.i02}.
+
+\bibitem[Ho and An{\'e}(2014)]{ho2014}
+L.~S.~T. Ho and C.~An{\'e}.
+\newblock {A linear-time algorithm for Gaussian and non-Gaussian trait
+  evolution models}.
+\newblock \emph{Systematic Biology}, 63\penalty0 (3):\penalty0 397--408, 2014.
+\newblock \doi{10.1093/sysbio/syu005}.
+
+\bibitem[Isensee et~al.(2021)Isensee, Jaeger, Kohl, Petersen, and
+  Maier-Hein]{isensee2021}
+F.~Isensee, P.~F. Jaeger, S.~A.~A. Kohl, J.~Petersen, and K.~H. Maier-Hein.
+\newblock {nnU-Net: a self-configuring method for deep learning-based
+  biomedical image segmentation}.
+\newblock \emph{Nature Methods}, 18\penalty0 (2):\penalty0 203--211, 2021.
+\newblock \doi{10.1038/s41592-020-01008-z}.
+
+\bibitem[Kamhi et~al.(2016)Kamhi, Gronenberg, Robson, and Traniello]{kamhi2016}
+J.~F. Kamhi, W.~Gronenberg, S.~K.~A. Robson, and J.~F.~A. Traniello.
+\newblock {Social complexity influences brain investment and neural operation
+  costs in ants}.
+\newblock \emph{Proceedings of the Royal Society B}, 283\penalty0
+  (1841):\penalty0 20161949, 2016.
+\newblock \doi{10.1098/rspb.2016.1949}.
+
+\bibitem[Kamhi et~al.(2019)Kamhi, Ilie{\c{s}}, and Traniello]{kamhi2019}
+J.~F. Kamhi, I.~Ilie{\c{s}}, and J.~F.~A. Traniello.
+\newblock {Social complexity and brain evolution: comparative analysis of
+  modularity and integration in ant brain organization}.
+\newblock \emph{Brain, Behavior and Evolution}, 93\penalty0 (1):\penalty0
+  4--18, 2019.
+\newblock \doi{10.1159/000497267}.
+
+\bibitem[Katzke et~al.(2026)Katzke, {Hita Garcia}, L{\"o}sel, Azuma,
+  Farag{\'o}, Aibekova, Casadei-Ferreira, Gautam, {et al.}, {The Antscan GAGA
+  Consortium}, Baumbach, Economo, and van~de Kamp]{katzke2026}
+J.~Katzke, F.~{Hita Garcia}, P.~D. L{\"o}sel, F.~Azuma, T.~Farag{\'o},
+  L.~Aibekova, A.~Casadei-Ferreira, S.~Gautam, {et al.}, {The Antscan GAGA
+  Consortium}, T.~Baumbach, E.~P. Economo, and T.~van~de Kamp.
+\newblock {High-throughput phenomics of global ant biodiversity}.
+\newblock \emph{Nature Methods}, 23\penalty0 (3):\penalty0 663--672, 2026.
+\newblock \doi{10.1038/s41592-026-03005-0}.
+
+\bibitem[Lakens(2017)]{lakens2017}
+D.~Lakens.
+\newblock {Equivalence tests: a practical primer for t tests, correlations, and
+  meta-analyses}.
+\newblock \emph{Social Psychological and Personality Science}, 8\penalty0
+  (4):\penalty0 355--362, 2017.
+\newblock \doi{10.1177/1948550617697177}.
+
+\bibitem[Lihoreau et~al.(2012)Lihoreau, Latty, and Chittka]{lihoreau2012}
+M.~Lihoreau, T.~Latty, and L.~Chittka.
+\newblock {An exploration of the social brain hypothesis in insects}.
+\newblock \emph{Frontiers in Physiology}, 3:\penalty0 442, 2012.
+\newblock \doi{10.3389/fphys.2012.00442}.
+
+\bibitem[L{\"o}sel et~al.(2020)L{\"o}sel, van~de Kamp, Jayme, Ershov,
+  Farag{\'o}, Pichler, et~al.]{losel2020}
+P.~D. L{\"o}sel, T.~van~de Kamp, A.~Jayme, A.~Ershov, T.~Farag{\'o},
+  O.~Pichler, et~al.
+\newblock {Introducing Biomedisa as an open-source online platform for
+  biomedical image segmentation}.
+\newblock \emph{Nature Communications}, 11:\penalty0 5577, 2020.
+\newblock \doi{10.1038/s41467-020-19303-w}.
+
+\bibitem[Marty et~al.(2025)Marty, Couto, Dawson, Brard, d'Ettorre, Montgomery,
+  and Sandoz]{marty2025}
+S.~Marty, A.~Couto, E.~H. Dawson, N.~Brard, P.~d'Ettorre, S.~H. Montgomery, and
+  J.-C. Sandoz.
+\newblock {Ancestral complexity and constrained diversification of the ant
+  olfactory system}.
+\newblock \emph{Proceedings of the Royal Society B}, 292\penalty0
+  (2045):\penalty0 20250662, 2025.
+\newblock \doi{10.1098/rspb.2025.0662}.
+
+\bibitem[Matte et~al.(2025)Matte, Gu{\'e}nard, Gautam, Azuma, Katzke, {Hita
+  Garcia}, van~de Kamp, and Economo]{matte2025}
+A.~Matte, B.~Gu{\'e}nard, S.~Gautam, F.~Azuma, J.~Katzke, F.~{Hita Garcia},
+  T.~van~de Kamp, and E.~P. Economo.
+\newblock {The evolution of cheaper workers facilitated larger societies and
+  accelerated diversification in ants}.
+\newblock \emph{Science Advances}, 11\penalty0 (51):\penalty0 eadx8068, 2025.
+\newblock \doi{10.1126/sciadv.adx8068}.
+\newblock Data and code: Zenodo \doi{10.5281/zenodo.15546461}.
+
+\bibitem[Niven and Laughlin(2008)]{niven2008}
+J.~E. Niven and S.~B. Laughlin.
+\newblock {Energy limitation as a selective pressure on the evolution of
+  sensory systems}.
+\newblock \emph{Journal of Experimental Biology}, 211\penalty0 (11):\penalty0
+  1792--1804, 2008.
+\newblock \doi{10.1242/jeb.017574}.
+
+\bibitem[O'Donnell et~al.(2015)O'Donnell, Bulova, DeLeon, Khodak, Miller, and
+  Sulger]{odonnell2015}
+S.~O'Donnell, S.~J. Bulova, S.~DeLeon, P.~Khodak, S.~Miller, and E.~Sulger.
+\newblock {Distributed cognition and social brains: reductions in mushroom body
+  investment accompanied the origins of sociality in wasps (Hymenoptera:
+  Vespidae)}.
+\newblock \emph{Proceedings of the Royal Society B}, 282\penalty0
+  (1810):\penalty0 20150791, 2015.
+\newblock \doi{10.1098/rspb.2015.0791}.
+
+\bibitem[Pagel(1999)]{pagel1999}
+M.~Pagel.
+\newblock {Inferring the historical patterns of biological evolution}.
+\newblock \emph{Nature}, 401\penalty0 (6756):\penalty0 877--884, 1999.
+\newblock \doi{10.1038/44766}.
+
+\bibitem[Paradis and Schliep(2019)]{paradis2019}
+E.~Paradis and K.~Schliep.
+\newblock {ape 5.0: an environment for modern phylogenetics and evolutionary
+  analyses in R}.
+\newblock \emph{Bioinformatics}, 35\penalty0 (3):\penalty0 526--528, 2019.
+\newblock \doi{10.1093/bioinformatics/bty633}.
+
+\bibitem[Perl et~al.(2026)Perl, Coto, Johnson, Johnson, Graber, Haas, Waters,
+  Traniello, and Harrison]{perl2026}
+C.~D. Perl, Z.~N. Coto, R.~Johnson, M.~Johnson, L.~Graber, J.~Haas, J.~S.
+  Waters, J.~Traniello, and J.~F. Harrison.
+\newblock {Evolution of neurometabolic frugality in harvester ants}.
+\newblock \emph{Proceedings of the Royal Society B}, 293\penalty0
+  (2081):\penalty0 20260387, 2026.
+\newblock \doi{10.1098/rspb.2026.0387}.
+
+\bibitem[Riveros et~al.(2012)Riveros, Seid, and Wcislo]{riveros2012}
+A.~J. Riveros, M.~A. Seid, and W.~T. Wcislo.
+\newblock {Evolution of brain size in class-based societies of fungus-growing
+  ants (Attini)}.
+\newblock \emph{Animal Behaviour}, 83\penalty0 (4):\penalty0 1043--1049, 2012.
+\newblock \doi{10.1016/j.anbehav.2012.01.032}.
+
+\bibitem[Seid et~al.(2011)Seid, Castillo, and Wcislo]{seid2011}
+M.~A. Seid, A.~Castillo, and W.~T. Wcislo.
+\newblock {The allometry of brain miniaturization in ants}.
+\newblock \emph{Brain, Behavior and Evolution}, 77\penalty0 (1):\penalty0
+  5--13, 2011.
+\newblock \doi{10.1159/000322530}.
+
+\bibitem[Toulkeridou et~al.(2023)Toulkeridou, Gutierrez, Baum, Doya, and
+  Economo]{toulkeridou2023}
+E.~Toulkeridou, C.~E. Gutierrez, D.~Baum, K.~Doya, and E.~P. Economo.
+\newblock {Automated segmentation of insect anatomy from micro-CT images using
+  deep learning}.
+\newblock \emph{Natural Sciences}, 3\penalty0 (4):\penalty0 e20230010, 2023.
+\newblock \doi{10.1002/ntls.20230010}.
+\newblock Data: Dryad \doi{10.5061/dryad.qz612jmgv}.
+
+\bibitem[Wehner et~al.(2007)Wehner, Fukushi, and Isler]{wehner2007}
+R.~Wehner, T.~Fukushi, and K.~Isler.
+\newblock {On being small: brain allometry in ants}.
+\newblock \emph{Brain, Behavior and Evolution}, 69\penalty0 (3):\penalty0
+  220--228, 2007.
+\newblock \doi{10.1159/000097057}.
+
+\end{thebibliography}

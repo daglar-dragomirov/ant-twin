@@ -1,0 +1,45 @@
+\section{Deviations from the preregistration}\label{app:dev}
+
+The protocol, including its deviations, is described here.
+
+\paragraph{Declared at the freeze (prereg v1.0).}
+\begin{enumerate}[series=deviations]
+\item\label{dev:seg} Segmentation uses the seg v3 ensemble (Toulkeridou labels + agent-approved AntScan brains) instead
+of a model trained on Toulkeridou labels only.
+\item\label{dev:qc} Mask QC is done by vision agents instead of human review.
+\item\label{dev:body} Body volume uses v8 instead of v6. The v6 slice spacing was wrong for compressed stacks; the
+median ratio to the owner-measured volumes (S1) changed from $1.15$ to $1.04$.
+\item\label{dev:reg} Registration is a timestamped GitHub commit and tag instead of OSF. The repository is private
+until the preprint is posted.
+\item\label{dev:metime} The measurement-error model was run after the primary test.
+\end{enumerate}
+
+\paragraph{After unblinding.}
+\begin{enumerate}[resume=deviations]
+\item\label{dev:melength} \textbf{Measurement-error model, run length.} It used $4 \times 4000$ iterations instead of
+$4 \times 2000$. With $2000$ iterations, one variance component had bulk ESS $372$ ($< 400$). The 2000-iteration
+estimate is $+0.0375$ (0.0193--0.0554).
+\item\label{dev:mem} \textbf{Measurement-error model, $\boldsymbol{m}$.} $m$ is the held-out error only. The
+per-specimen between-fold spread named in the preregistration was not recorded by the ensemble.
+\item\label{dev:backend} \textbf{Measurement-error model, backend.} cmdstanr was used instead of rstan (compilation
+failure); model and priors unchanged.
+\item\label{dev:r2pool} \textbf{R2 species pool.} $272$ species ($270 + 2$ species placed only in the Borowiec tree);
+the 270-species version is reported alongside (Table~\ref{tab:S4}).
+\item\label{dev:r8} \textbf{R8 flags.} Only Bell-Roberts Table 21 was used, as preregistered; unlisted species count as
+unflagged.
+\item\label{dev:r1} \textbf{R1 tree count.} R1 used $6$ FBD trees ($3$ crown + $3$ stem), because the analysis
+configuration capped tree sets at $6$. The preregistration names $200$. The owners'-method variant of R12 averaged the
+same $6$ trees. Both were recomputed on all $200$ trees for this draft; the results are unchanged
+(Table~\ref{tab:robustness}).
+\item\label{dev:r10} \textbf{R10.} Implemented as an approximation: genus medians of the species-level S3 means in our
+species table. The planned extension to ${\sim}746$ species without species-level colony size was not built.
+\item\label{dev:notrun} \textbf{Not run.} The head-volume variant of R3 (no head masks were produced), and the three
+secondary analyses of prereg Section~9 (number of worker castes, number of queens, path analysis).
+\item\label{dev:r3x} \textbf{R3 extension.} Measurement protocol and QC rule were specified after unblinding. The QC
+rule was fixed before the final fits and revised once, on segmentation diagnostics. An interim estimate on $28$ added
+species ($+0.007$) had been seen before the rule was written. Both rule versions are reported.
+\item\label{dev:brain} \textbf{Brain definition.} The preregistration's TODO to record the exact Toulkeridou label
+definition is still open (Section~\ref{sec:brain}).
+\end{enumerate}
+
+ESS is the effective sample size of the sampler.

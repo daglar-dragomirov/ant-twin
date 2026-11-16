@@ -1,0 +1,56 @@
+\section{Implementation details}\label{app:impl}
+
+\paragraph{Scan stacks.} Low-resolution copies were cached for $811$ stacks. The true number of slices of every
+full-resolution stack was read from the first image file directory of the tagged image file format (TIFF); a
+size-based estimate had been wrong for $551$ compressed stacks.
+
+\paragraph{Frozen brain table.} The table was frozen before unblinding (SHA-256
+\path{df1902432f4680b295c1e68cc68804c6d42a71a445d0dbd2003f90bbaf646ead}).
+
+\paragraph{Registration.} The analysis plan and outcome rules were preregistered as \path{prereg_draft.md} v0.1
+(13 November 2026). The plan was frozen, with the deviations listed in Appendix~\ref{app:dev}, in commit
+\texttt{3b1e350} and tag \texttt{ant-twin-prereg-v1.0} (commit \texttt{c01e2ee}, wording fix) on 15 November 2026.
+
+\paragraph{R2 details.}
+\begin{itemize}[nosep]
+\item The Borowiec tree has one exemplar per genus. Each of the $100$ resamples (seed 2025) attaches one random species
+per genus to that genus' tip.
+\item Main dating scheme: root prior 129--158~Ma with independent rates. The other three schemes are reported as
+sensitivity.
+\item The species pool was all $272$ species with brain, body and colony size; two of them are absent from the Economo
+tree. $117$ of $125$ genera matched.
+\end{itemize}
+
+\paragraph{R8 details.}
+\begin{itemize}[nosep]
+\item $19$ of the $270$ primary species were flagged: $14$ supercolonial, $4$ social parasites, $1$ both.
+\item Species outside the Bell-Roberts set were treated as unflagged.
+\end{itemize}
+
+\paragraph{Measurement-error model} (specimen level; brms 2.23 with CmdStan 2.37). The brms formula is
+\begin{small}
+\begin{verbatim}
+log10_brain | se(m, sigma = TRUE) ~ log10_body + log10_colony + iodine
+    + step1.22 + step6.11 + (1 | gr(phylo, cov = A)) + (1 | species)
+\end{verbatim}
+\end{small}
+In model notation, for specimen $i$ of species $s(i)$, with $y_i$ its $\lten$ brain volume,
+\begin{equation}\label{eq:me}
+\begin{gathered}
+y_i \sim \Normal\bigl(\mu_i,\; \sigma^2 + m^2\bigr), \qquad
+\mu_i = \vx_i^{\top}\boldsymbol{\beta} + a_{s(i)} + u_{s(i)},\\
+\mathbf{a} \sim \Normal\bigl(\mathbf{0},\, \sigma_{\mathrm{phylo}}^2\Amat\bigr), \qquad
+u_s \sim \Normal\bigl(0,\, \sigma_{\mathrm{species}}^2\bigr),
+\end{gathered}
+\end{equation}
+where $\vx_i$ holds the intercept and the covariates of model~\eqref{eq:pgls} ($\lten$ body volume, $\lten$ colony
+size, iodine, step 1.22, step 6.11), $m$ is the known measurement SD, $\sigma$ the residual (worker-level) SD, and
+$\mathbf{a}$ and $u$ are the phylogenetic and species-level random intercepts.
+\begin{itemize}[nosep]
+\item Data: $442$ specimens of the $270$ species. $\Amat$ is the MCC correlation matrix.
+\item Known measurement SD: $m = \lten(1 + 0.05/0.6745) = 0.0311$, from the held-out AntScan volume error.
+Sensitivity: $m = 0.0127$, from the human-labelled folds.
+\item Priors as preregistered: $b \sim \Normal(0, 0.5)$, intercept $\sim t_3(0, 2.5)$, SDs $\sim$ half-$t_3(0, 0.5)$.
+\item Sampling: $4$ chains $\times$ $4000$ iterations (Appendix~\ref{app:dev}, item~\ref{dev:melength}).
+\item An MCMCglmm fit ($4 \times 260{,}000$ iterations) served as a cross-check.
+\end{itemize}

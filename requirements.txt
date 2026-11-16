@@ -1,4 +1,14 @@
 numpy
+scipy
+pandas
 boto3
 pillow
 tifffile
+imagecodecs
+openpyxl
+nibabel
+scikit-image
+nnunetv2
+opencv-python-headless
+tqdm
+matplotlib

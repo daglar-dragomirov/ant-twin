@@ -1,5 +1,5 @@
-"""Fixed orx run command for every node: `python -I run.py` (run from the repo root).
-What a node does is decided ONLY by committed code + configs/experiment.json on its branch."""
+"""Single run command for every experiment branch: `python -I run.py` (from the repository root).
+What a run does is decided only by the committed code and configs/experiment.json on its branch."""
 import sys, json, pathlib, importlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent / "src"))
 import runlog

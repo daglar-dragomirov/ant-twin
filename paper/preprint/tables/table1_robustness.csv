@@ -1,0 +1,42 @@
+id,check,preregistered,n,beta2,ci95,ci90,p,lambda,outcome,source
+P,"Primary: PGLS-λ, Economo 2018 MCC tree",yes,270,+0.035,[+0.017; +0.054],[+0.020; +0.051],0.0002,0.72,support H2,primary.json
+P-post,Primary over 100 NC-stem posterior trees (median; pooled interval; 100 trees/resamples; share p<0.05 = 1.00),yes,270,+0.033,[+0.014; +0.051],[+0.017; +0.048],,0.64,support H2,primary.json
+ME,"Measurement-error model, brms (m = 0.0311; specimen level, 442 specimens; posterior mean, CrI)",yes,270,+0.038,[+0.019; +0.055],[+0.023; +0.053],,,support H2,me/brms_summary_m_main_iter4000.csv
+ME-tk,"Measurement-error model, brms, m = 0.0127 (sensitivity)",yes,270,+0.038,[+0.020; +0.056],[+0.022; +0.053],,,support H2,me/brms_summary_m_tk_iter4000.csv
+ME-mcmc,"Measurement-error model, MCMCglmm cross-check (posterior mean, 95% CrI)",yes (fallback),270,+0.038,[+0.020; +0.056],,,,support H2,me/mcmcglmm_summary_m_main.csv
+R1,R1 FBD posterior trees as run (3 crown + 3 stem) (median; pooled interval; 6 trees/resamples; share p<0.05 = 1.00),yes,270,+0.032,[+0.014; +0.051],[+0.017; +0.047],,0.59,support H2,primary.json
+R1-200,R1 all 200 FBD posterior trees (draft check) (median; pooled interval; 200 trees/resamples; share p<0.05 = 1.00),draft check,270,+0.032,[+0.014; +0.051],[+0.017; +0.048],,0.60,support H2,preprint/tables/supp_checks.json
+R2,"R2 Borowiec 2025 tree, one random species per genus, 117 genera (median; pooled interval; 100 trees/resamples; share p<0.05 = 0.77)",yes,117,+0.029,[+0.001; +0.058],[+0.005; +0.054],,0.50,support H2,r2.json
+R3,R3 soft tissue (S1 body − cuticle) as size measure,yes,154,+0.006,[-0.013; +0.024],[-0.010; +0.021],0.5576,0.00,undecided,primary.json
+R4,R4 without Dolichoderinae,yes,258,+0.038,[+0.019; +0.058],[+0.022; +0.054],0.0001,0.73,support H2,primary.json
+R4,R4 without Dorylinae,yes,260,+0.036,[+0.016; +0.055],[+0.019; +0.052],0.0004,0.74,support H2,primary.json
+R4,R4 without Formicinae,yes,214,+0.024,[+0.003; +0.045],[+0.007; +0.042],0.0225,0.72,support H2,primary.json
+R4,R4 without Myrmicinae,yes,149,+0.042,[+0.013; +0.071],[+0.018; +0.066],0.0051,0.60,support H2,primary.json
+R4,R4 without Ponerinae,yes,221,+0.038,[+0.020; +0.055],[+0.023; +0.053],<0.0001,0.72,support H2,primary.json
+R5,R5 unstained species only,yes,232,+0.034,[+0.013; +0.056],[+0.017; +0.052],0.0015,0.73,support H2,primary.json
+R6,R6 all workers incl. major/media/intercaste,yes,272,+0.033,[+0.014; +0.051],[+0.017; +0.048],0.0006,0.67,support H2,primary.json
+R7,R7 without cf./aff./nr. names,yes,255,+0.037,[+0.017; +0.056],[+0.021; +0.053],0.0002,0.70,support H2,primary.json
+R8,"R8 without supercolonial species and social parasites, MCC",yes,251,+0.040,[+0.020; +0.061],[+0.023; +0.058],0.0001,0.74,support H2,r8.json
+R8-post,R8 over 100 posterior trees (median; pooled interval; 100 trees/resamples; share p<0.05 = 1.00),yes,251,+0.038,[+0.018; +0.059],[+0.021; +0.056],,0.65,support H2,r8.json
+R9,R9 colony size from Bell-Roberts 2024 only,yes,129,+0.040,[+0.014; +0.067],[+0.018; +0.062],0.0032,0.28,support H2,primary.json
+R9,R9 maximum instead of mean colony size,yes,195,+0.027,[+0.007; +0.047],[+0.010; +0.044],0.0091,0.63,support H2,primary.json
+R10,"R10 genus-level colony size (approximation, see deviations)",yes,268,+0.041,[+0.015; +0.066],[+0.019; +0.062],0.0017,0.69,support H2,primary.json
+R11,R11 without genus-placed tips,yes,269,+0.035,[+0.017; +0.054],[+0.020; +0.051],0.0002,0.72,support H2,primary.json
+R12,R12 λ fixed at 1 (Brownian motion),yes,270,+0.040,[+0.022; +0.059],[+0.025; +0.056],<0.0001,1.00,support H2,primary.json
+R12,"R12 owners' method: mean VCV of 6 FBD trees / 200, fixed",yes,270,+0.033,[+0.014; +0.051],[+0.017; +0.048],0.0005,,support H2,primary.json
+R12-200,R12 owners' method on all 200 FBD trees (draft check),draft check,270,+0.033,[+0.015; +0.052],[+0.018; +0.049],0.0004,,support H2,preprint/tables/supp_checks.json
+R13,R13 badly preserved specimens returned + collection year covariate,yes,197,+0.036,[+0.014; +0.058],[+0.017; +0.055],0.0018,0.59,support H2,primary.json
+R14,R14 OLS without phylogeny,yes,270,+0.027,[+0.009; +0.044],[+0.012; +0.041],0.0026,,support H2,primary.json
+R3x,"R3 extension: soft tissue, S1 + own measurements, adaptive QC (main)",no (declared after unblinding),235,+0.010,[-0.006; +0.026],[-0.004; +0.023],0.2277,0.00,undecided,r3x.json
+R3x-post,"R3 extension, adaptive QC, 100 posterior trees (median; pooled interval; 100 trees/resamples; share p<0.05 = 0.00)",no,235,+0.010,[-0.006; +0.026],,,,undecided,r3x.json
+R3x-body,"Body denominator, same 235 species",no,235,+0.034,[+0.014; +0.055],[+0.017; +0.052],0.0012,0.65,support H2,r3x.json
+R3x-strict,"R3 extension: soft tissue, strict QC (sensitivity)",no,197,+0.002,[-0.015; +0.019],[-0.012; +0.016],0.8284,0.00,equivalence (H0),r3x.json
+R3x-strict-body,"Body denominator, same 197 species",no,197,+0.027,[+0.007; +0.047],[+0.010; +0.044],0.0084,0.63,support H2,r3x.json
+R3-body154,"Body denominator, same 154 S1 species as R3 (exploratory)",no,154,+0.020,[+0.002; +0.038],[+0.005; +0.035],0.0326,0.00,support H2,preprint/tables/supp_checks.json (= primary_v1.md)
+LFL-body,"Body from the same instrument and specimens as soft tissue (S1 or owners' program), 235 species",no (draft check),235,+0.014,[-0.004; +0.031],[-0.001; +0.029],0.1207,0.35,undecided,preprint/tables/supp_checks.json
+LFL-body-S1,"Same, S1 species only (owners' body volumes)",no (draft check),154,+0.012,[-0.007; +0.030],[-0.004; +0.027],0.2133,0.00,undecided,preprint/tables/supp_checks.json
+BQ,"Primary model, specimens with brain/body > 10% removed",no (draft check),268,+0.024,[+0.007; +0.042],[+0.010; +0.039],0.0071,0.59,support H2,preprint/tables/supp_checks.json
+BQ,"Primary model, specimens with brain/body > 5% removed",no (draft check),257,+0.020,[+0.004; +0.037],[+0.006; +0.034],0.0166,0.55,support H2,preprint/tables/supp_checks.json
+BQ,"Primary model, all autoflagged specimens removed",no (draft check),265,+0.024,[+0.006; +0.041],[+0.009; +0.038],0.0086,0.63,support H2,preprint/tables/supp_checks.json
+BQ,"Primary model, owners' S1 body volumes only",no (draft check),155,+0.010,[-0.011; +0.031],[-0.007; +0.028],0.3364,0.59,undecided,preprint/tables/supp_checks.json
+BQ,"Primary model, own v8 body volumes only",no (draft check),162,+0.035,[+0.010; +0.060],[+0.014; +0.056],0.0071,0.49,support H2,preprint/tables/supp_checks.json

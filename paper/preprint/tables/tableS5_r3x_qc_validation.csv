@@ -1,0 +1,14 @@
+item,value
+Specimens measured with the owners' program,185
+  targets (primary species without S1) / S1 validation,141 / 44
+Pass adaptive QC (threshold 110 / 145),141 (92 / 49)
+"Pass strict QC (threshold 110, body stable across thresholds ≤1.15)",88
+Adaptive-QC failures by voxel size 6.11 / 2.44 / 1.22 µm,"17/31, 26/145, 1/9"
+"Validation vs S1, adaptive (n = 41 of 44): median ratio body / cuticle / soft",0.998 / 1.039 / 0.992
+"  r(log body), r(log soft)","0.998, 0.997"
+  excluded validation specimens,"2x__M-9, 2x__S-15, 5x__12-41"
+"Validation, threshold 110, stable specimens (n = 37): median ratio body / cuticle / soft; r(log soft)",0.998 / 1.060 / 0.992; 0.997
+"Validation, threshold 130, stable specimens (n = 37): median ratio body / cuticle / soft; r(log soft)",0.996 / 0.941 / 1.007; 0.997
+"Validation, threshold 145, stable specimens (n = 37): median ratio body / cuticle / soft; r(log soft)",0.992 / 0.856 / 1.022; 0.998
+"Gap-3 / gap-1 ratio, body, threshold 110 (n = 7 specimens): median (range)",0.9996 (0.990–1.010)
+"Gap-3 / gap-1 ratio, soft tissue, threshold 110 (n = 8 specimens): median (range)",0.9991 (0.978–1.002)

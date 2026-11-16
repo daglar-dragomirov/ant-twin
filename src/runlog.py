@@ -35,15 +35,15 @@ class Tee(io.TextIOBase):
 class Run:
     def __init__(self, stage, root="outputs"):
         now = datetime.datetime.now(datetime.timezone.utc)
-        self.branch = sh("git rev-parse --abbrev-ref HEAD") or "nobranch"
-        self.commit = sh("git rev-parse HEAD")
+        self.branch = os.environ.get("ORX_EXPERIMENT") or sh("git rev-parse --abbrev-ref HEAD") or "nobranch"
+        self.commit = os.environ.get("ORX_COMMIT") or sh("git rev-parse HEAD")
         self.host = os.environ.get("RUNPOD_POD_ID") or socket.gethostname()
         safe = lambda s: "".join(ch if ch.isalnum() or ch in "-_." else "-" for ch in s)[:60]
         self.run_id = f"{now:%Y%m%d-%H%M%S}_{safe(self.branch)}_{safe(self.host)}"
         self.dir = pathlib.Path(root) / self.run_id; (self.dir / "outputs").mkdir(parents=True, exist_ok=True)
         self.key = f"{PREFIX}/runs/{self.run_id}"
         self.meta = {"run_id": self.run_id, "stage": stage, "branch": self.branch, "commit": self.commit,
-                     "dirty": bool(sh("git status --porcelain")), "host": self.host, "command": " ".join(sys.argv),
+                     "orx_run_id": os.environ.get("ORX_RUN_ID"), "orx_experiment": os.environ.get("ORX_EXPERIMENT"), "orx_title": os.environ.get("ORX_EXPERIMENT_TITLE"), "orx_parent": os.environ.get("ORX_PARENT_EXPERIMENT"), "host": self.host, "command": " ".join(sys.argv),
                      "start_utc": now.isoformat(), "end_utc": None, "status": "running", "r2_prefix": self.key,
                      "r2_verified": False, "last_sync_utc": None}
         self.c = r2.client(); self._stop = threading.Event(); self._lock = threading.Lock()

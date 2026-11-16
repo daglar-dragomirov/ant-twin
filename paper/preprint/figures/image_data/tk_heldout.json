@@ -1,0 +1,75 @@
+{
+ "rule": "held-out TK cases of seg v3 at the 10th/50th/90th percentile of per-case Dice and the minimum",
+ "stats_117_tk_cases": {
+  "n": 117,
+  "median": 0.9686,
+  "q10": 0.9446,
+  "q90": 0.98068,
+  "min": 0.4951,
+  "n_below_0.90": 3
+ },
+ "cases": [
+  {
+   "case": "TK_005",
+   "fold": 4,
+   "species": "Camponotus_cf.neatricus",
+   "dice": 0.9466,
+   "rel_vol_err": -0.0246,
+   "role": "10th percentile",
+   "slice": 213,
+   "n_slices": 500,
+   "image_r2": "ant-twin/runs/20261113-181636_tk-volumes-v2-skip-macos-appledouble-entries_6945dce09bf2/outputs/nnUNet_raw/Dataset501_AntBrainTK/imagesTr/TK_005_0000.nii.gz",
+   "label_r2": "ant-twin/runs/20261113-181636_tk-volumes-v2-skip-macos-appledouble-entries_6945dce09bf2/outputs/nnUNet_raw/Dataset501_AntBrainTK/labelsTr/TK_005.nii.gz",
+   "checkpoint_r2": "ant-twin/runs/20261114-215207_seg-v3-folds-3-4_5d5eb7649d55/outputs/fold_4/checkpoint_final.pth",
+   "slice_dice": 0.9654
+  },
+  {
+   "case": "TK_071",
+   "fold": 0,
+   "species": "Pheidole_rhea",
+   "dice": 0.9686,
+   "rel_vol_err": 0.0166,
+   "role": "median",
+   "slice": 168,
+   "n_slices": 250,
+   "image_r2": "ant-twin/runs/20261113-181636_tk-volumes-v2-skip-macos-appledouble-entries_6945dce09bf2/outputs/nnUNet_raw/Dataset501_AntBrainTK/imagesTr/TK_071_0000.nii.gz",
+   "label_r2": "ant-twin/runs/20261113-181636_tk-volumes-v2-skip-macos-appledouble-entries_6945dce09bf2/outputs/nnUNet_raw/Dataset501_AntBrainTK/labelsTr/TK_071.nii.gz",
+   "checkpoint_r2": "ant-twin/runs/20261114-212341_seg-v3-5-fold-nnu-net-2d-on-tk-all-agent-approve_9f0551f91543/outputs/fold_0/checkpoint_final.pth",
+   "slice_dice": 0.9884
+  },
+  {
+   "case": "TK_057",
+   "fold": 2,
+   "species": "Liometopum_apiculatum",
+   "dice": 0.9806,
+   "rel_vol_err": 0.0135,
+   "role": "90th percentile",
+   "slice": 89,
+   "n_slices": 116,
+   "image_r2": "ant-twin/runs/20261113-181636_tk-volumes-v2-skip-macos-appledouble-entries_6945dce09bf2/outputs/nnUNet_raw/Dataset501_AntBrainTK/imagesTr/TK_057_0000.nii.gz",
+   "label_r2": "ant-twin/runs/20261113-181636_tk-volumes-v2-skip-macos-appledouble-entries_6945dce09bf2/outputs/nnUNet_raw/Dataset501_AntBrainTK/labelsTr/TK_057.nii.gz",
+   "checkpoint_r2": "ant-twin/runs/20261114-212341_seg-v3-5-fold-nnu-net-2d-on-tk-all-agent-approve_9f0551f91543/outputs/fold_2/checkpoint_final.pth",
+   "slice_dice": 0.9882,
+   "full_volume_dice_recomputed": 0.9806,
+   "full_volume_rel_vol_err_recomputed": 0.0135,
+   "worst_slice": 41
+  },
+  {
+   "case": "TK_063",
+   "fold": 3,
+   "species": "Parasyscia_crib_rinodis",
+   "dice": 0.4951,
+   "rel_vol_err": -0.2954,
+   "role": "minimum",
+   "slice": 203,
+   "n_slices": 309,
+   "image_r2": "ant-twin/runs/20261113-181636_tk-volumes-v2-skip-macos-appledouble-entries_6945dce09bf2/outputs/nnUNet_raw/Dataset501_AntBrainTK/imagesTr/TK_063_0000.nii.gz",
+   "label_r2": "ant-twin/runs/20261113-181636_tk-volumes-v2-skip-macos-appledouble-entries_6945dce09bf2/outputs/nnUNet_raw/Dataset501_AntBrainTK/labelsTr/TK_063.nii.gz",
+   "checkpoint_r2": "ant-twin/runs/20261114-215207_seg-v3-folds-3-4_5d5eb7649d55/outputs/fold_3/checkpoint_final.pth",
+   "slice_dice": 0.6135,
+   "full_volume_dice_recomputed": 0.4952,
+   "full_volume_rel_vol_err_recomputed": -0.2954,
+   "worst_slice": 159
+  }
+ ]
+}
