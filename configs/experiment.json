@@ -1,1 +1,1 @@
-{"stage": "boxes_v3", "finder_runs": ["20261116-180930_finder-alt-caste-scans-boxes-from-2nd-3rd-finder_1907827dd6c8"], "workers": 8, "max_box_mb": 2000, "prefix": "ant-twin/cache/boxes_q1/", "reverse": false, "shard": [0, 1]}
+{"stage": "boxes_v3", "finder_runs": ["20261116-181044_specimen-ends-for-caste-scans-both-ends-of-the-l_1907827dd6c8"], "workers": 8, "max_box_mb": 2000, "prefix": "ant-twin/cache/boxes_q1/", "reverse": false, "shard": [0, 1]}
