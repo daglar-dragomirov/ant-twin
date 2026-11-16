@@ -1,7 +1,7 @@
 \begin{sidewaystable}
 \centering
 \caption[$\beta_2$ in the primary analysis and all robustness checks]{\textbf{$\boldsymbol{\beta_2}$ ($\lten$ colony
-size) in the primary analysis and all robustness checks.} Outcome labels follow the preregistered decision rules (prereg sec.~7): support H2 = $95\%$ CI $> 0$; support H1 = $95\%$ CI $< 0$; equivalence = $90\%$ CI inside $(-0.02;\,0.02)$; otherwise undecided. $90\%$ intervals for single fits are $t$-intervals with $n - 6$ df. For tree sets and resamples, $\beta_2$ is the median and the interval is the pooled $t$-mixture interval. `Draft check' rows were computed for this draft by \path{supp_checks.py} and are not in the committed results files.
+size) in the primary analysis and all robustness checks.} Outcome labels follow the preregistered decision rules (prereg sec.~7): support H2 = $95\%$ CI $> 0$; support H1 = $95\%$ CI $< 0$; equivalence = $90\%$ CI inside $(-0.02;\,0.02)$; otherwise undecided. $90\%$ intervals for single fits are $t$-intervals with $n - 6$ df. For tree sets and resamples, $\beta_2$ is the median and the interval is the pooled $t$-mixture interval. `Post hoc check' rows were computed after the preregistered analyses by \path{supp_checks.py}.
 Trees: number of trees or resamples, and share: the share of them with $p < 0.05$ (tree sets and resamples only).
 Sources: \path{me/brms_summary_m_main_iter4000.csv}; \path{me/brms_summary_m_tk_iter4000.csv}; \path{me/mcmcglmm_summary_m_main.csv}; \path{preprint/tables/supp_checks.json}; \path{preprint/tables/supp_checks.json} (= \path{primary_v1.md}); \path{primary.json}; \path{r2.json}; \path{r3x.json}; \path{r8.json}.}
 \label{tab:robustness}
@@ -18,7 +18,7 @@ ME-tk & Measurement-error model, brms, $m = 0.0127$ (sensitivity) & yes & 270 & 
 ME-mcmc & Measurement-error model, MCMCglmm cross-check (posterior mean, 95\% CrI) & yes (fallback) & 270 & $+0.038$ & $[+0.020;\,+0.056]$ &  &  &  &  &  & support H2 \\
 \midrule
 R1 & R1 FBD posterior trees as run (3 crown + 3 stem) & yes & 270 & $+0.032$ & $[+0.014;\,+0.051]$ & $[+0.017;\,+0.047]$ &  & 0.59 & 6 & 1.00 & support H2 \\
-R1-200 & R1 all 200 FBD posterior trees (draft check) & draft check & 270 & $+0.032$ & $[+0.014;\,+0.051]$ & $[+0.017;\,+0.048]$ &  & 0.60 & 200 & 1.00 & support H2 \\
+R1-200 & R1 all 200 FBD posterior trees (post hoc check) & post hoc check & 270 & $+0.032$ & $[+0.014;\,+0.051]$ & $[+0.017;\,+0.048]$ &  & 0.60 & 200 & 1.00 & support H2 \\
 R2 & R2 Borowiec 2025 tree, one random species per genus, 117 genera & yes & 117 & $+0.029$ & $[+0.001;\,+0.058]$ & $[+0.005;\,+0.054]$ &  & 0.50 & 100 & 0.77 & support H2 \\
 R3 & R3 soft tissue (S1 body $-$ cuticle) as size measure & yes & 154 & $+0.006$ & $[-0.013;\,+0.024]$ & $[-0.010;\,+0.021]$ & 0.5576 & 0.00 &  &  & undecided \\
 R4 & R4 without Dolichoderinae & yes & 258 & $+0.038$ & $[+0.019;\,+0.058]$ & $[+0.022;\,+0.054]$ & 0.0001 & 0.73 &  &  & support H2 \\
@@ -37,7 +37,7 @@ R10 & R10 genus-level colony size (approximation, see deviations) & yes & 268 & 
 R11 & R11 without genus-placed tips & yes & 269 & $+0.035$ & $[+0.017;\,+0.054]$ & $[+0.020;\,+0.051]$ & 0.0002 & 0.72 &  &  & support H2 \\
 R12 & R12 $\lambda$ fixed at 1 (Brownian motion) & yes & 270 & $+0.040$ & $[+0.022;\,+0.059]$ & $[+0.025;\,+0.056]$ & $<$0.0001 & 1.00 &  &  & support H2 \\
 R12 & R12 owners' method: mean VCV of 6 FBD trees / 200, fixed & yes & 270 & $+0.033$ & $[+0.014;\,+0.051]$ & $[+0.017;\,+0.048]$ & 0.0005 &  &  &  & support H2 \\
-R12-200 & R12 owners' method on all 200 FBD trees (draft check) & draft check & 270 & $+0.033$ & $[+0.015;\,+0.052]$ & $[+0.018;\,+0.049]$ & 0.0004 &  &  &  & support H2 \\
+R12-200 & R12 owners' method on all 200 FBD trees (post hoc check) & post hoc check & 270 & $+0.033$ & $[+0.015;\,+0.052]$ & $[+0.018;\,+0.049]$ & 0.0004 &  &  &  & support H2 \\
 R13 & R13 badly preserved specimens returned + collection year covariate & yes & 197 & $+0.036$ & $[+0.014;\,+0.058]$ & $[+0.017;\,+0.055]$ & 0.0018 & 0.59 &  &  & support H2 \\
 R14 & R14 OLS without phylogeny & yes & 270 & $+0.027$ & $[+0.009;\,+0.044]$ & $[+0.012;\,+0.041]$ & 0.0026 &  &  &  & support H2 \\
 \midrule
@@ -47,14 +47,14 @@ R3x-body & Body denominator, same 235 species & no & 235 & $+0.034$ & $[+0.014;\
 R3x-strict & R3 extension: soft tissue, strict QC (sensitivity) & no & 197 & $+0.002$ & $[-0.015;\,+0.019]$ & $[-0.012;\,+0.016]$ & 0.8284 & 0.00 &  &  & equivalence (H0) \\
 R3x-strict-body & Body denominator, same 197 species & no & 197 & $+0.027$ & $[+0.007;\,+0.047]$ & $[+0.010;\,+0.044]$ & 0.0084 & 0.63 &  &  & support H2 \\
 R3-body154 & Body denominator, same 154 S1 species as R3 (exploratory) & no & 154 & $+0.020$ & $[+0.002;\,+0.038]$ & $[+0.005;\,+0.035]$ & 0.0326 & 0.00 &  &  & support H2 \\
-LFL-body & Body from the same instrument and specimens as soft tissue (S1 or owners' program), 235 species & no (draft check) & 235 & $+0.014$ & $[-0.004;\,+0.031]$ & $[-0.001;\,+0.029]$ & 0.1207 & 0.35 &  &  & undecided \\
-LFL-body-S1 & Same, S1 species only (owners' body volumes) & no (draft check) & 154 & $+0.012$ & $[-0.007;\,+0.030]$ & $[-0.004;\,+0.027]$ & 0.2133 & 0.00 &  &  & undecided \\
+LFL-body & Body from the same instrument and specimens as soft tissue (S1 or owners' program), 235 species & no (post hoc check) & 235 & $+0.014$ & $[-0.004;\,+0.031]$ & $[-0.001;\,+0.029]$ & 0.1207 & 0.35 &  &  & undecided \\
+LFL-body-S1 & Same, S1 species only (owners' body volumes) & no (post hoc check) & 154 & $+0.012$ & $[-0.007;\,+0.030]$ & $[-0.004;\,+0.027]$ & 0.2133 & 0.00 &  &  & undecided \\
 \midrule
-BQ & Primary model, specimens with brain/body $>$ 10\% removed & no (draft check) & 268 & $+0.024$ & $[+0.007;\,+0.042]$ & $[+0.010;\,+0.039]$ & 0.0071 & 0.59 &  &  & support H2 \\
-BQ & Primary model, specimens with brain/body $>$ 5\% removed & no (draft check) & 257 & $+0.020$ & $[+0.004;\,+0.037]$ & $[+0.006;\,+0.034]$ & 0.0166 & 0.55 &  &  & support H2 \\
-BQ & Primary model, all autoflagged specimens removed & no (draft check) & 265 & $+0.024$ & $[+0.006;\,+0.041]$ & $[+0.009;\,+0.038]$ & 0.0086 & 0.63 &  &  & support H2 \\
-BQ & Primary model, owners' S1 body volumes only & no (draft check) & 155 & $+0.010$ & $[-0.011;\,+0.031]$ & $[-0.007;\,+0.028]$ & 0.3364 & 0.59 &  &  & undecided \\
-BQ & Primary model, own v8 body volumes only & no (draft check) & 162 & $+0.035$ & $[+0.010;\,+0.060]$ & $[+0.014;\,+0.056]$ & 0.0071 & 0.49 &  &  & support H2 \\
+BQ & Primary model, specimens with brain/body $>$ 10\% removed & no (post hoc check) & 268 & $+0.024$ & $[+0.007;\,+0.042]$ & $[+0.010;\,+0.039]$ & 0.0071 & 0.59 &  &  & support H2 \\
+BQ & Primary model, specimens with brain/body $>$ 5\% removed & no (post hoc check) & 257 & $+0.020$ & $[+0.004;\,+0.037]$ & $[+0.006;\,+0.034]$ & 0.0166 & 0.55 &  &  & support H2 \\
+BQ & Primary model, all autoflagged specimens removed & no (post hoc check) & 265 & $+0.024$ & $[+0.006;\,+0.041]$ & $[+0.009;\,+0.038]$ & 0.0086 & 0.63 &  &  & support H2 \\
+BQ & Primary model, owners' S1 body volumes only & no (post hoc check) & 155 & $+0.010$ & $[-0.011;\,+0.031]$ & $[-0.007;\,+0.028]$ & 0.3364 & 0.59 &  &  & undecided \\
+BQ & Primary model, own v8 body volumes only & no (post hoc check) & 162 & $+0.035$ & $[+0.010;\,+0.060]$ & $[+0.014;\,+0.056]$ & 0.0071 & 0.49 &  &  & support H2 \\
 \bottomrule
 \end{tabular}
 \end{sidewaystable}

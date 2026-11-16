@@ -59,12 +59,6 @@ at most modestly increased.
 \noindent\textbf{Keywords:} ants, brain size, colony size, social brain hypothesis, distributed cognition, micro-CT,
 deep learning, phylogenetic comparative methods, preregistration
 
-\smallskip
-\noindent\textbf{Status:} draft v1, 16 November 2026. The first draft (\path{manuscript.md}, v0) rewritten with the
-paperforge pipeline: structure and wording changed, numbers and citations unchanged. All numbers come from the
-committed result files listed in the \hyperref[sec:data]{\emph{Data and code availability statement}}. Values marked
-``draft check'' were computed for this draft with \path{preprint/tables/supp_checks.py}, which runs the frozen
-analysis code read-only. Abstract: 218 words.
 \end{small}
 
 \section{Introduction}\label{sec:intro}
@@ -409,18 +403,18 @@ Appendix~\ref{app:impl} gives the model formula (Eq.~\eqref{eq:me}), priors and 
 \paragraph{Exploratory analyses.} Analyses not in the plan are reported as exploratory. The soft-tissue extension
 combined owner-measured soft tissue for $154$ species with our measurements for $81$, giving $235$ species, and was
 fitted with the primary model~\eqref{eq:pgls} on the MCC tree and on the $100$ posterior trees. For the like-for-like
-decomposition (draft check), body and cuticle volumes were taken from the same instrument and the same specimens:
+decomposition (post hoc check), body and cuticle volumes were taken from the same instrument and the same specimens:
 owner-measured where available, otherwise the owners' program under the adaptive rule. The model was then fitted on
 the same species with this body volume, with soft tissue and with the primary-table body volume, which separates the
 cuticle contribution from differences between body-volume sources. These fits were repeated with $\lambda$ fixed at
-$0$ and at $1$ for both denominators. The body-volume refits (draft check) rebuilt species means without workers whose
+$0$ and at $1$ for both denominators. The body-volume refits (post hoc check) rebuilt species means without workers whose
 brain/body volume ratio exceeds $10\%$, without workers above $5\%$ and without all automatically flagged workers. Two
 further refits used owner-measured bodies only and our own bodies only. Their reference is the preregistered
 plausibility flag, which used the range 0.05--10\%; it was recorded, but by the preregistered rules it triggers mask
-review rather than exclusion. R1 and R12 were also recomputed on all $200$ FBD trees (draft check;
+review rather than exclusion. R1 and R12 were also recomputed on all $200$ FBD trees (post hoc check;
 Appendix~\ref{app:dev}, item~\ref{dev:r1}).
 
-\paragraph{Study size and question map.} Values marked ``draft check'' were computed for this draft with
+\paragraph{Study size and question map.} Values marked ``post hoc check'' were computed after the preregistered analyses with
 \path{preprint/tables/supp_checks.py}. The soft-tissue data set is smaller than the primary data set: owner-measured
 soft tissue exists for $154$ of the $270$ species, and our own measurements added $81$ more. The measured workers of
 the other $35$ species all failed QC. Q1 rests on the segmentation validation (Section~\ref{sec:brain}) and the two
@@ -528,7 +522,7 @@ soft tissue as the size measure, the outcome was undecided.
 primary analysis and all robustness checks.} Points: estimates (for tree sets and resamples, medians). Lines: $95\%$
 intervals (pooled intervals for tree sets and resamples; credible intervals for the measurement-error models). Grey
 band: preregistered SESOI ($\pm 0.02$). Dotted line: primary estimate. Colour gives the preregistered outcome label.
-Filled circles are preregistered analyses; open diamonds are exploratory analyses and draft checks. $n$ is the number
+Filled circles are preregistered analyses; open diamonds are exploratory analyses and post hoc checks. $n$ is the number
 of species, or specimens/species for the measurement-error models.}
 \label{fig:forest}
 \end{figure}
@@ -604,7 +598,7 @@ In all legends, S1 denotes owner-measured volumes (Dataset S1 of \citealp{matte2
 (Figure~\ref{fig:denominators}c; Table~\ref{tab:S9}). With owner-measured bodies, the median brain/body ratio was
 $1.95\%$, and no worker was above $10\%$. For v8 bodies, the median was $2.64\%$, and $6$ workers were above $10\%$,
 with a maximum of $102\%$, which is physically impossible; $28$ workers were above $5\%$. Refits of the primary
-model~\eqref{eq:pgls} (Table~\ref{tab:robustness}, ``draft check'' rows) gave:
+model~\eqref{eq:pgls} (Table~\ref{tab:robustness}, ``post hoc check'' rows) gave:
 \begin{center}
 \small
 \begin{tabular}{@{}llll@{}}
@@ -647,7 +641,7 @@ the owners' body volumes, body and soft tissue from the same instrument, and sof
 is attributable to errors in a minority of our own body masks. We therefore read the data as showing that brain
 investment is maintained in large-colony species, possibly with a small increase, and we do not read them as strong
 support for the social-brain hypothesis. Remeasuring all body volumes with the owners' program
-(Section~\ref{sec:nextsteps}) would resolve how large the positive effect is.
+would resolve how large the positive effect is.
 
 \paragraph{Cheaper workers, but not cheaper brains.} \citet{matte2025} showed that workers of large-colony species
 invest less in cuticle, and our data reproduce that pattern. We find that this economy does not extend to the brain:
@@ -677,7 +671,6 @@ precision but is unlikely to create a positive estimate. Alternative colony meas
 \item \textbf{Vision-agent QC instead of human review.} All inclusion decisions were made by a language-model agent; in
 the final round, one agent verdict per mask. The agent-approved masks agree closely with the final ensemble, and
 accuracy against human labels is high. Still, no human audit of a random sample has been done.
-\marker{\textbf{[AUTHOR: consider a blinded human audit of ${\sim}100$ masks before submission]}}
 \item \textbf{Body volume.} Our own body masks contain a few gross errors (Section~\ref{sec:q3}). The preregistered
 pipeline flagged brain/body ratios outside 0.05--10\% but did not exclude them, and this is the main reason why the
 effect size is uncertain.
@@ -692,15 +685,6 @@ below $0.1\%$ (median), with a maximum deviation of $2.2\%$ for soft tissue.
 \item \textbf{Departures from the preregistered plan.} R1 originally used $6$ instead of $200$ trees (recomputed here),
 R10 is an approximation, and the head-volume variant of R3 and the secondary analyses were not run.
 \end{itemize}
-
-\subsection{Recommended next steps before submission (for the author; delete in final version)}\label{sec:nextsteps}
-
-\begin{enumerate}
-\item Remeasure body and cuticle for all $270$ primary species with the owners' program. This removes the v8 body
-masks from the primary analysis, as a clearly labelled exploratory analysis.
-\item Run a blinded human audit of a random sample of masks.
-\item Fix the brain-label definition.
-\end{enumerate}
 
 \subsection{Conclusion}\label{sec:conclusion}
 
@@ -745,7 +729,7 @@ verdicts and the analysis code.
 \item \citet{bellroberts2024}: supplementary tables.
 \end{itemize}
 
-\paragraph{Figures and tables of this draft} are generated by \path{preprint/figures/make_figures.py},
+\paragraph{Figures and tables} are generated by \path{preprint/figures/make_figures.py},
 \path{preprint/figures/make_image_figures.py} (scan images: Figure~\ref{fig:scan} and Supplementary
 Figures~\ref{fig:tk}--\ref{fig:qcrej}), \path{preprint/tables/make_tables.py} and
 \path{preprint/tables/supp_checks.py}. Every image panel is rendered from data stored in the bucket; the selection
