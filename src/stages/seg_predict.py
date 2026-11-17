@@ -77,6 +77,7 @@ def main(cfg, out):
     for g in sorted(set(group_of.values())):
         ks_ = [k for k in todo if group_of[k] == g]
         batches += [(g, ks_[i:i + B]) for i in range(0, len(ks_), B)]
+    if cfg.get("reverse"): batches = batches[::-1]  # second GPU walks the batches from the other end
     with open(out / "brains.jsonl", "w", encoding="utf-8") as fo:
         b0 = 0
         for grp, chunk in batches:
