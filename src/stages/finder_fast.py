@@ -81,7 +81,7 @@ def main(cfg, out):
     with open(out / "finder.jsonl", "w", encoding="utf-8") as fo:
         for i, r in enumerate(recs):
             key = keyof(r); t0 = time.time()
-            base = {"key": key, "species": r["name"], "species_key": r["species_key"], "subfamily": r["subfamily"], "stained": r["stained"],
+            base = {"key": key + cfg.get("key_suffix", ""), "base_key": key, "species": r["name"], "species_key": r["species_key"], "subfamily": r["subfamily"], "stained": r["stained"],
                     "voxel_um": r["voxel_um"], "folder": r["folder"], "vial": r["vial"], "url_full": r["url_full"]}
             if i % 20 == 0 and key in done_elsewhere(): continue
             if cfg.get("require_true_pages") and key not in TP:  # compressed stacks: the cached page estimate is wrong
